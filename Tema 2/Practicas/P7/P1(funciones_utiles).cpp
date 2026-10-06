@@ -4,7 +4,7 @@
 #include <fstream>
 
 using namespace std;
-// Dimensión global fijada en tiempo de compilación
+// DimensiÃ³n global fijada en tiempo de compilaciÃ³n
 const int n = 4;
 
    	double prod(double a[],double b[] ,int n) { 
@@ -69,7 +69,7 @@ const int n = 4;
 // ============================================================================
     
 void iter_gauss_seidel(double A[n][n], double b[n], double newx[n], int n, double tol) {
-// La aproximación inicial se almacena en el vector oldx. Sugerencia oldx[i]= b[i]/a[i][i] 
+// La aproximaciÃ³n inicial se almacena en el vector oldx. Sugerencia oldx[i]= b[i]/a[i][i] 
 	double oldx[n]; double rest[n]; int iter=0;
 	for (int i=0; i<=n-1; i++) {   
 		oldx[i]= b[i]/ A[i][i]; 
