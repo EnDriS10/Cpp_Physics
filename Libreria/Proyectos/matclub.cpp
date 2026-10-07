@@ -3607,7 +3607,7 @@ double* newton_raphson_sys(double (*AF[])(double*, int), double *x_init, int n, 
 
         for (int i = 0; i < n; i++) x_new[i] = x_old[i] + dx[i];
 
-        error = mod_vect(dx, n);;
+        error = mod_vect(dx, n);
         for (int i = 0; i < n; i++) x_old[i] = x_new[i];
         
         iter++;
