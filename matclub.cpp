@@ -64,7 +64,7 @@ void intercambiar_elem(double &a, double &b) {
 }
 
 bool isNaN(double v) {
-    return v != v; // En norma IEEE 754, NaN es distinto de sÌ mismo
+    return v != v; // En norma IEEE 754, NaN es distinto de s√≠ mismo
 }
 
 bool isRoot(const double* raices, int n, double r, double tol) {
@@ -74,12 +74,12 @@ bool isRoot(const double* raices, int n, double r, double tol) {
     return false;
 }
 
-// Comprueba si un n˙mero est· dentro de un rango [min, max] con tolerancia
+// Comprueba si un n√∫mero est√° dentro de un rango [min, max] con tolerancia
 bool is_in_range(double val, double min_val, double max_val) {
     return (val >= min_val && val <= max_val);
 }
 
-// Limita un valor escalar entre un mÌnimo y un m·ximo (clamp escalar)
+// Limita un valor escalar entre un m√≠nimo y un m√°ximo (clamp escalar)
 double clamp(double val, double min_val, double max_val) {
     if (val < min_val) return min_val;
     if (val > max_val) return max_val;
@@ -292,7 +292,7 @@ double* logspace(double start, double end, int n) {
 }
 
 //arange funcion star:step:end de matlab. La variable n por referencia & 
-		//para que la funciÛn calcule el tamaÒo y te lo devuelva al main
+		//para que la funci√≥n calcule el tama√±o y te lo devuelva al main
 double* arange(double start, double step, double end, int &n) { 
     n = (int)( (end - start) / step ) + 1;
     double *c ;        c = new double [n];
@@ -644,7 +644,7 @@ double* concat_vect(double *a, int n_a, double *b, int n_b) {
     for ( int i = 0; i<n_a ; i++){
         c[i] = a[i];
     }
-    // AÒadir el segundo vector a continuacion
+    // A√±adir el segundo vector a continuacion
     for ( int i = 0; i<n_b ; i++){
         c[n_a + i] = b[i];
     }   
@@ -695,10 +695,10 @@ En el programa principal:
 int n = 5;
 double *v;
 v = input_vect(n);
-con n el tamaÒo del vector
+con n el tama√±o del vector
 */
 
-    double *v = new double[n]; // Crea el vector din·mico de tamaÒo n
+    double *v = new double[n]; // Crea el vector din√°mico de tama√±o n
     
     for (int i = 0; i < n; i++) {
         cout << "INTRODUCE ELEMENTO [" << i << "]: ";
@@ -772,6 +772,7 @@ double* polyval_vect(double *p, int np, double *x, int nx) {
 
 // polyval_scalar: Evalua un polinomio p en un UNICO punto escalar x
 		// Devuelve un escalar (el valor del polinomio evaluado en ese punto)
+		//Esta funcion ademas es una funcion polinomica de x
 double polyval(double *p, int np, double x) { 
     double val = 0.0;
     for ( int i = 0; i < np ; i++){
@@ -866,7 +867,7 @@ void heapsort_util(double *arr, int left, int right) {
         heapify(arr, i, 0, left);
     }
 }
-// 3. Partition (El n˙cleo de Quicksort)
+// 3. Partition (El n√∫cleo de Quicksort)
 int partition(double *arr, int left, int right) {
     double pivot = arr[right];
     int i = left - 1;
@@ -879,23 +880,23 @@ int partition(double *arr, int left, int right) {
     intercambiar_elem(arr[i + 1], arr[right]);
     return i + 1;
 }
-// 4. LÛgica central de Introsort
+// 4. L√≥gica central de Introsort
 void introsort_util(double *arr, int left, int right, int depth_limit) {
     int size = right - left + 1;
     
-    // CondiciÛn 1: Sub-arreglo pequeÒo -> Insertion Sort
+    // Condici√≥n 1: Sub-arreglo peque√±o -> Insertion Sort
     if (size < 16) {
         insertion_sort(arr, left, right);
         return;
     }
     
-    // CondiciÛn 2: Exceso de recursiÛn -> Heapsort
+    // Condici√≥n 2: Exceso de recursi√≥n -> Heapsort
     if (depth_limit == 0) {
         heapsort_util(arr, left, right);
         return;
     }
     
-    // CondiciÛn 3: OperaciÛn normal -> Quicksort
+    // Condici√≥n 3: Operaci√≥n normal -> Quicksort
     int pivot = partition(arr, left, right);
     introsort_util(arr, left, pivot - 1, depth_limit - 1);
     introsort_util(arr, pivot + 1, right, depth_limit - 1);
@@ -910,7 +911,7 @@ double* sort_vect(double *a, int n) {
     }   
     
     if (n > 1) {
-        // El lÌmite de profundidad matem·tico es 2 * log2(n)
+        // El l√≠mite de profundidad matem√°tico es 2 * log2(n)
         int depth_limit = 2 * (log(n) / log(2.0)); 
         introsort_util(c, 0, n - 1, depth_limit);
     }
@@ -1003,9 +1004,9 @@ double* randnorm_vect(double mu, double sigma, int n) {
 }
 
 // find_gt: Devuelve los INDICES donde los elementos son mayores que un umbral
-		// La variable 'n_out' por referencia te dir· cu·ntos elementos cumplieron la condiciÛn
+		// La variable 'n_out' por referencia te dir√° cu√°ntos elementos cumplieron la condici√≥n
 double* find_gt_vect(double *a, int n, double umbral, int &n_out) {
-    // 1. Contar cu·ntos cumplen la condiciÛn para saber el tamaÒo del nuevo vector
+    // 1. Contar cu√°ntos cumplen la condici√≥n para saber el tama√±o del nuevo vector
     n_out = 0;
     for (int i = 0; i < n; i++) {
         if (a[i] > umbral) n_out++;
@@ -1013,12 +1014,12 @@ double* find_gt_vect(double *a, int n, double umbral, int &n_out) {
     
     if (n_out == 0) return NULL; // Si ninguno cumple, retorna nulo
     
-    // 2. Crear el vector din·mico y guardar los Ìndices
+    // 2. Crear el vector din√°mico y guardar los √≠ndices
     double *c = new double[n_out];
     int idx = 0;
     for (int i = 0; i < n; i++) {
         if (a[i] > umbral) {
-            c[idx] = (double)i; // Guardamos el Ìndice como double
+            c[idx] = (double)i; // Guardamos el √≠ndice como double
             idx++;
         }
     }
@@ -1084,7 +1085,7 @@ double** gen_mat(double **M, int f, int c){
 void del_mat(double **M, int f){
 	/* libera la memoria de la matriz pasada en la llamada. Por ejemplo una matriz B.
 	borrarmatriz(B, fb);
-	con fb el n√∫mero de filas de B.
+	con fb el n√É¬∫mero de filas de B.
 	*/
 
 	for (int i=0; i < f; i++) {
@@ -1093,19 +1094,19 @@ void del_mat(double **M, int f){
     delete [] M;
 }
 
-// MultiplicaciÛn de matrices (A de fa x ca, B de fb x cb)
+// Multiplicaci√≥n de matrices (A de fa x ca, B de fb x cb)
 double** prod_mat(double **A, double **B, int fa, int ca, int fb, int cb) {
     
     // Validar si se pueden multiplicar (Columnas de A == Filas de B)
     if (ca != fb) {
         print_error_dim("No se pueden multiplicar las matrices, dimensiones incompatibles", fa, ca, fb, cb);
-        return NULL; // Retorna nulo si la multiplicaciÛn no es v·lida matem·ticamente
+        return NULL; // Retorna nulo si la multiplicaci√≥n no es v√°lida matem√°ticamente
     }
 
     double suma;
     double **Producto;
     
-    // Creamos la matriz resultado de tamaÒo (fa x cb)
+    // Creamos la matriz resultado de tama√±o (fa x cb)
     Producto = gen_mat(Producto, fa, cb);
 
     for (int i = 0; i < fa; i++) {
@@ -1148,7 +1149,7 @@ void print_mat(double **M, int f, int c, const char* nombre = "ans") {
     cout << nombre << " =" << endl;
     cout << "[" << endl;
     for (int i = 0; i < f; i++) {
-        cout << " "; // PequeÒa indentaciÛn para las filas
+        cout << " "; // Peque√±a indentaci√≥n para las filas
         for (int j = 0; j < c; j++) {
             cout << M[i][j] << (j < c - 1 ? ", " : " ");
         }
@@ -1252,7 +1253,7 @@ double trace_mat(double **A, int n) {
     return tr;
 }
 
-// Extrae la fila 'fila_idx' de una matriz y la devuelve como un vector din·mico 1D
+// Extrae la fila 'fila_idx' de una matriz y la devuelve como un vector din√°mico 1D
 					//Importante: LOS CONVIERTE EN UN POINTER, VECT EN ESTA LIBRERIA
 double* get_row_mat(double **A, int f, int c, int fila_idx) {
     double *v = new double[c];
@@ -1262,7 +1263,7 @@ double* get_row_mat(double **A, int f, int c, int fila_idx) {
     return v;
 }
 
-// Extrae la columna 'col_idx' de una matriz y la devuelve como un vector din·mico 1D
+// Extrae la columna 'col_idx' de una matriz y la devuelve como un vector din√°mico 1D
 					//Importante: LOS CONVIERTE EN UN POINTER, VECT EN ESTA LIBRERIA
 double* get_col_mat(double **A, int f, int c, int col_idx) {
     double *v = new double[f];
@@ -1341,7 +1342,7 @@ double** horzcat_mat(double **A, int fa, int ca, double **B, int fb, int cb) {
         for (int j = 0; j < ca; j++) {
             M[i][j] = A[i][j];
         }
-        // Copiar matriz B a continuaciÛn
+        // Copiar matriz B a continuaci√≥n
         for (int j = 0; j < cb; j++) {
             M[i][ca + j] = B[i][j];
         }
@@ -1388,27 +1389,27 @@ double* flatten_mat(double **A, int f, int c, int &n_out) {
     return v;
 }
 
-// FunciÛn maestra para matrices usando un puntero a una funciÛn de vectores
+// Funci√≥n maestra para matrices usando un puntero a una funci√≥n de vectores
 double** funeach_mat(double **A, int f, int c, double* (*vec_func)(double*, int)) {
     double **M = new double*[f];
     for (int i = 0; i < f; i++) {
-        M[i] = vec_func(A[i], c); // Ejecuta la funciÛn que le pases sobre cada fila
+        M[i] = vec_func(A[i], c); // Ejecuta la funci√≥n que le pases sobre cada fila
     }
     // ejemplo en main: double **A_exp = map_mat(A, f, c, exp_vect);   // Aplica exponencial a la matriz
     return M;
 }
 
 
-// Aplica una funciÛn matem·tica de <cmath> a cada elemento de un vector
+// Aplica una funci√≥n matem√°tica de <cmath> a cada elemento de un vector
 double* apply_scalar_vect(double *a, int n, double (*func)(double)) {
     double *c = new double[n];
     for (int i = 0; i < n; i++) {
-        c[i] = func(a[i]); // Llama a la funciÛn (ej. sin(x)) ejemplo: double *v_senos = applyscalar_vect(a, n,sin)
+        c[i] = func(a[i]); // Llama a la funci√≥n (ej. sin(x)) ejemplo: double *v_senos = applyscalar_vect(a, n,sin)
     }
     return c;
 }
 
-// Aplica una funciÛn matem·tica de <cmath> a cada elemento de una matriz
+// Aplica una funci√≥n matem√°tica de <cmath> a cada elemento de una matriz
 double** apply_scalar_mat(double **A, int f, int c, double (*func)(double)) {
     double **M = new double*[f];
     for (int i = 0; i < f; i++) {
@@ -1438,11 +1439,11 @@ double** remove_row_col_mat(double **A, int f, int c, int f_del, int c_del) {
     return M;
 }
 
-// Comprueba si una matriz cuadrada es simÈtrica
+// Comprueba si una matriz cuadrada es sim√©trica
 bool is_symmetric_mat(double **A, int n, double tolerancia) {
     for (int i = 0; i < n; i++) {
         for (int j = i + 1; j < n; j++) {
-            // Comparamos con un pequeÒo margen de error por decimales (tolerancia)
+            // Comparamos con un peque√±o margen de error por decimales (tolerancia)
             if (fabs(A[i][j] - A[j][i]) > tolerancia) {
                 return false;
             }
@@ -1488,8 +1489,8 @@ double** swap_cols_mat(double **A, int f, int c, int c1, int c2) {
 }
 
 
-// Busca un valor en la matriz y devuelve su posiciÛn (fila y columna) por referencia
-						// Retorna true si lo encuentra, false si no est· en la matriz
+// Busca un valor en la matriz y devuelve su posici√≥n (fila y columna) por referencia
+						// Retorna true si lo encuentra, false si no est√° en la matriz
 						//Poniendo tolerencia a 0 pues es excatamente ese valor
 bool find_val_mat(double **A, int f, int c, double val, int &out_f, int &out_c, double tolerancia) {
     for (int i = 0; i < f; i++) {
@@ -1501,13 +1502,13 @@ bool find_val_mat(double **A, int f, int c, double val, int &out_f, int &out_c, 
             }
         }
     }
-    return false; // No se encontrÛ el valor
+    return false; // No se encontr√≥ el valor
 }
 
 // find_mat: Encuentra las coordenadas (filas y columnas) donde los elementos son mayores que un umbral
 								// Devuelve una matriz de n_out x 2 donde cada fila es [fila, columna]
 double** find_gt_mat(double **A, int f, int c, double umbral, int &n_out) {
-    // 1. Contar cu·ntos cumplen
+    // 1. Contar cu√°ntos cumplen
     n_out = 0;
     for (int i = 0; i < f; i++) {
         for (int j = 0; j < c; j++) {
@@ -1554,7 +1555,7 @@ double prod_all_mat(double **A, int f, int c) {
     return producto;
 }
 
-// Devuelve el valor m·ximo absoluto de toda la matriz
+// Devuelve el valor m√°ximo absoluto de toda la matriz
 double max_mat(double **A, int f, int c) {
     double max_v = A[0][0];
     for (int i = 0; i < f; i++) {
@@ -1576,7 +1577,7 @@ double max_abs_mat(double **A, int f, int c) {
     return m;
 }
 
-// Devuelve el valor mÌnimo absoluto de toda la matriz
+// Devuelve el valor m√≠nimo absoluto de toda la matriz
 double min_mat(double **A, int f, int c) {
     double min_v = A[0][0];
     for (int i = 0; i < f; i++) {
@@ -1589,7 +1590,7 @@ double min_mat(double **A, int f, int c) {
     return min_v;
 }
 
-// Genera una matriz (f x c) con n˙meros aleatorios uniformes entre 0.0 y 1.0 (rand(f,c) en MATLAB)
+// Genera una matriz (f x c) con n√∫meros aleatorios uniformes entre 0.0 y 1.0 (rand(f,c) en MATLAB)
 double** rand_mat(int f, int c) {
     double **M = gen_mat(M, f, c);
     for (int i = 0; i < f; i++) {
@@ -1611,7 +1612,7 @@ double** randi_mat(int min_val, int max_val, int f, int c) {
     return M;
 }
 
-// Genera una matriz (f x c) con distribuciÛn normal est·ndar (randn(f,c) en MATLAB)
+// Genera una matriz (f x c) con distribuci√≥n normal est√°ndar (randn(f,c) en MATLAB)
 double** randn_mat(int f, int c) {
     double **M = gen_mat(M, f, c);
     double PI_ = acos(-1.0);
@@ -1626,7 +1627,7 @@ double** randn_mat(int f, int c) {
     return M;
 }
 
-// Limita los valores de una matriz entre un mÌnimo y un m·ximo
+// Limita los valores de una matriz entre un m√≠nimo y un m√°ximo
 double** clamp_mat(double **A, int f, int c, double min_val, double max_val) {
     double **M = gen_mat(M, f, c);
     for (int i = 0; i < f; i++) {
@@ -1736,7 +1737,7 @@ int count_text_lines_file(const char* filename) {
     return n;
 }
 
-// Cuenta cu·ntas lÌneas (puntos) tiene un archivo de datos con 2 columnas
+// Cuenta cu√°ntas l√≠neas (puntos) tiene un archivo de datos con 2 columnas
 int count_lines_file(const char* filename) {
     ifstream fentrada(filename, ios::in);
     if (!fentrada) {
@@ -1746,7 +1747,7 @@ int count_lines_file(const char* filename) {
     
     int m = 0;
     double x, y;
-    // Lectura segura: el while comprueba si se pudo leer con Èxito la pareja x, y
+    // Lectura segura: el while comprueba si se pudo leer con √©xito la pareja x, y
     while (fentrada >> x >> y) {
         m++;
     }
@@ -1754,7 +1755,7 @@ int count_lines_file(const char* filename) {
     return m;
 }
 
-// Lee un archivo de 2 columnas y carga los datos en los vectores din·micos x e y preexistentes
+// Lee un archivo de 2 columnas y carga los datos en los vectores din√°micos x e y preexistentes
 void read_xy_file(const char* filename, double *x, double *y, int m) {
     ifstream fentrada(filename, ios::in);
     if (!fentrada) {
@@ -1820,7 +1821,7 @@ double** read_mat_file(const char* filename, int f, int c) {
     return M;
 }
 
-// Cuenta cu·ntos elementos (filas) tiene un archivo de una sola columna
+// Cuenta cu√°ntos elementos (filas) tiene un archivo de una sola columna
 int count_rows_single_file(const char* filename) {
     ifstream fentrada(filename, ios::in);
     if (!fentrada) {
@@ -1837,7 +1838,7 @@ int count_rows_single_file(const char* filename) {
     return m;
 }
 
-// Lee un archivo de una sola columna y lo devuelve como un vector din·mico 1D
+// Lee un archivo de una sola columna y lo devuelve como un vector din√°mico 1D
 double* read_single_vector_file(const char* filename, int &n_out) {
     n_out = count_rows_single_file(filename);
     if (n_out <= 0) return NULL;
@@ -1851,7 +1852,7 @@ double* read_single_vector_file(const char* filename, int &n_out) {
     return v;
 }
 
-// Guarda un vector din·mico 1D en un archivo de texto de una sola columna
+// Guarda un vector din√°mico 1D en un archivo de texto de una sola columna
 void save_vector_file(const char* filename, double *v, int n) {
     ofstream fsalida(filename, ios::out);
     if (!fsalida) {
@@ -1866,7 +1867,7 @@ void save_vector_file(const char* filename, double *v, int n) {
     print_info("Vector guardado exitosamente", filename);
 }
 
-// Cuenta el n˙mero de filas y columnas de un archivo de matriz desconocido sin usar sstream
+// Cuenta el n√∫mero de filas y columnas de un archivo de matriz desconocido sin usar sstream
 bool get_file_dimensions(const char* filename, int &f_out, int &c_out) {
     ifstream fentrada(filename, ios::in);
     if (!fentrada) {
@@ -1877,14 +1878,14 @@ bool get_file_dimensions(const char* filename, int &f_out, int &c_out) {
     f_out = 0;
     c_out = 0;
     
-    // 1. Contar cu·ntas columnas hay en la primera lÌnea
+    // 1. Contar cu√°ntas columnas hay en la primera l√≠nea
     double temp_val;
     char ch;
     
-    // Leemos n˙meros de la primera lÌnea hasta que se acabe o cambie de lÌnea
+    // Leemos n√∫meros de la primera l√≠nea hasta que se acabe o cambie de l√≠nea
     while (fentrada >> temp_val) {
         c_out++;
-        // Verificamos si el siguiente car·cter es un salto de lÌnea
+        // Verificamos si el siguiente car√°cter es un salto de l√≠nea
         ch = fentrada.peek();
         if (ch == '\n' || ch == '\r') {
             break; // Salimos del bucle al terminar la primera fila
@@ -1894,10 +1895,10 @@ bool get_file_dimensions(const char* filename, int &f_out, int &c_out) {
     if (c_out == 0) {
         print_error("El archivo esta vacio", filename);
         fentrada.close();
-        return false; // Archivo vacÌo
+        return false; // Archivo vac√≠o
     }
     
-    // 2. Contar el total de elementos en todo el archivo para sacar el n˙mero exacto de filas
+    // 2. Contar el total de elementos en todo el archivo para sacar el n√∫mero exacto de filas
     fentrada.clear(); // Limpiamos posibles estados de fin de archivo
     fentrada.seekg(0, ios::beg); // Volvemos al inicio del archivo
     
@@ -1908,7 +1909,7 @@ bool get_file_dimensions(const char* filename, int &f_out, int &c_out) {
     
     fentrada.close();
     
-    // El n˙mero de filas es el total de n˙meros divididos entre las columnas contadas
+    // El n√∫mero de filas es el total de n√∫meros divididos entre las columnas contadas
     f_out = total_elementos / c_out;
     
     return true;
@@ -1921,4 +1922,1054 @@ double** read_mat_auto(const char* filename, int &f_out, int &c_out) {
     return read_mat_file(filename, f_out, c_out);
 }
 
+
+
+
+// ============================================================================
+// METODOS NUMERICOS PARA BUSQUEDA DE RAICES (CEROS)
+// ============================================================================
+
+// M√©todo de la Biseccion (Una sola raiz)
+double biseccion(double (*f)(double), double x1, double x2, 
+                 double tol1, double tol2, int max_iter) {
+    if (f(x1) * f(x2) >= 0.0) {
+        print_error("f(x1) y f(x2) deben tener signos opuestos");
+        return MC_NAN; 
+    }
+
+    double x3 = 0.0;
+    int iter = 0;
+
+    do {
+        x3 = (x1 + x2) / 2.0;
+        if (f(x3) * f(x1) < 0.0) {
+            x2 = x3;
+        } else {
+            x1 = x3;
+        }
+        iter++;
+    } while ((fabs(x2 - x1) > 2.0 * tol1 && fabs(f(x3)) > tol2) && iter < max_iter);
+
+    return x3;
+}
+
+// Biseccion Multiple: Busca multiples raices en un intervalo [a, b]
+double* biseccion_multi(double (*f)(double), double a, double b, 
+                        int subintervalos, double tol, int &num_raices) {
+    
+    // Reserva de memoria al estilo de la libreria
+    double* raices = new double[subintervalos]; 
+    num_raices = 0;
+    double paso = (b - a) / subintervalos;
+
+    for (int i = 0; i < subintervalos; ++i) {
+        double x1 = a + i * paso;
+        double x2 = x1 + paso;
+
+        if (f(x1) * f(x2) < 0.0) {
+            double r = biseccion(f, x1, x2, tol, tol, 100);
+            // Uso de las utilidades isNaN e isRoot de matclub_2
+            if (!isNaN(r) && !isRoot(raices, num_raices, r, 1e-3)) {
+                raices[num_raices] = r;
+                num_raices++;
+            }
+        } else if (fabs(f(x1)) < tol && !isRoot(raices, num_raices, x1, 1e-3)) {
+            raices[num_raices] = x1;
+            num_raices++;
+        }
+    }
+    
+    // Si no se encontraron raices, limpiamos memoria y devolvemos nulo
+    if (num_raices == 0) {
+        delete[] raices;
+        return NULL;
+    }
+    
+    return raices;
+}
+
+// M√©todo de la Secante (Una sola raiz)
+double secante(double (*f)(double), double x0, double x1, 
+               double tol1, double tol2, int max_iter) {
+    if (fabs(f(x0)) < fabs(f(x1))) {
+        intercambiar_elem(x0, x1); // Uso de tu funcion de intercambio
+    }
+
+    double x2 = 0.0, dx = 0.0;
+    int iter = 0;
+
+    do {
+        double f0 = f(x0);
+        double f1 = f(x1);
+
+        if (fabs(f0 - f1) < 1e-12) break;
+
+        x2 = x1 - f1 * ((x0 - x1) / (f0 - f1));
+        dx = x2 - x1;
+
+        x0 = x1;
+        x1 = x2;
+        iter++;
+    } while ((fabs(f(x2)) > tol1 || fabs(dx) > tol2) && iter < max_iter);
+
+    return x2;
+}
+
+// M√©todo de Newton (Una sola raiz)
+double newton(double (*f)(double), double (*df)(double), double x0, 
+              double tol1, double tol2, int max_iter) {
+    double x1 = x0;
+    double dx = 0.0;
+    int iter = 0;
+
+    do {
+        double fx = f(x0);
+        double dfx = df(x0);
+
+        if (fx != 0.0 && dfx != 0.0) {
+            x1 = x0 - (fx / dfx);
+            dx = x1 - x0;
+            x0 = x1;
+        } else {
+            break;
+        }
+        iter++;
+    } while ((fabs(f(x1)) > tol1 || fabs(dx) > tol2) && iter < max_iter);
+
+    return x1;
+}
+
+// Newton Multiple: Busca multiples raices lanzando Newton desde varios puntos
+double* newton_multi(double (*f)(double), double (*df)(double), 
+                     double a, double b, int puntos_inicio, double tol, int &num_raices) {
+    
+    double* raices = new double[puntos_inicio + 1];
+    num_raices = 0;
+    double paso = (b - a) / puntos_inicio;
+
+    for (int i = 0; i <= puntos_inicio; ++i) {
+        double x0 = a + i * paso;
+        double r = newton(f, df, x0, tol, tol, 100);
+
+        if (!isNaN(r) && r >= a && r <= b && fabs(f(r)) < tol) {
+            if (!isRoot(raices, num_raices, r, 1e-3)) {
+                raices[num_raices] = r;
+                num_raices++;
+            }
+        }
+    }
+    
+    // Si no se encontraron raices, limpiamos memoria y devolvemos nulo
+    if (num_raices == 0) {
+        delete[] raices;
+        return NULL;
+    }
+    
+    return raices;
+}
+
+
+
+// ============================================================================
+// RESOLUCION DE SISTEMAS LINEALES
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// 1. FACTORIZACION LU Y RESOLUCION
+// ----------------------------------------------------------------------------
+
+// Factorizaci√≥n LU (Forma 1 - Descomposici√≥n de Doolittle)
+// Las matrices L y U deben estar pre-creadas con zeros_mat(n, n)
+void lu_forma1(double **A, int n, double **L, double **U) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (i <= j) {
+                // Elementos de U (diagonal y por encima)
+                double sum = 0.0;
+                for (int k = 0; k < i; k++) sum += L[i][k] * U[k][j];
+                U[i][j] = A[i][j] - sum;
+
+                // Diagonal de L es 1.0 (Doolittle)
+                if (i == j) L[i][j] = 1.0; 
+                else L[i][j] = 0.0;
+            } else {
+                // Elementos de L (por debajo de la diagonal)
+                double sum = 0.0;
+                for (int k = 0; k < j; k++) sum += L[i][k] * U[k][j];
+                
+                if (U[j][j] == 0.0) {
+                    print_warning("Cero en la diagonal de U. La factorizacion LU puede fallar.");
+                }
+                L[i][j] = (A[i][j] - sum) / U[j][j];
+                U[i][j] = 0.0;
+            }
+        }
+    }
+}
+
+// Resuelve Ax = b usando LU Forma 1
+double* lu_forma1_sol(double **A, double *b, int n) {
+    double **L = zeros_mat(n, n);
+    double **U = zeros_mat(n, n);
+    double *z = new double[n];
+    double *x = new double[n];
+
+    // 1. Obtener L y U
+    lu_forma1(A, n, L, U);
+
+    // 2. Lz = b (Sustituci√≥n progresiva)
+    for (int i = 0; i < n; i++) {
+        double sum = 0.0;
+        for (int j = 0; j < i; j++) sum += L[i][j] * z[j];
+        z[i] = b[i] - sum;
+    }
+
+    // 3. Ux = z (Sustituci√≥n regresiva)
+    for (int i = n - 1; i >= 0; i--) {
+        double sum = 0.0;
+        for (int j = i + 1; j < n; j++) sum += U[i][j] * x[j];
+        x[i] = (z[i] - sum) / U[i][i];
+    }
+
+    del_mat(L, n);
+    del_mat(U, n);
+    delete[] z;
+    return x;
+}
+
+// Factorizaci√≥n LU (Forma 2 - Alternando fila U y columna L)
+// Las matrices L y U deben estar pre-creadas con zeros_mat(n, n)
+void lu_forma2(double **A, int n, double **L, double **U) {
+    for (int i = 0; i < n; i++) {
+        // Obtenci√≥n de una fila de U
+        for (int j = i; j < n; j++) {
+            double sum = 0.0;
+            for (int k = 0; k < i; k++) sum += L[i][k] * U[k][j];
+            U[i][j] = A[i][j] - sum;
+        }
+        
+        // Obtenci√≥n de una columna de L
+        for (int j = i; j < n; j++) {
+            if (j == i) {
+                L[j][i] = 1.0; // Hacemos uno los elementos de la diagonal de L
+            } else {
+                double sum = 0.0;
+                for (int k = 0; k < i; k++) sum += L[j][k] * U[k][i];
+                
+                if (U[i][i] == 0.0) {
+                    print_warning("Cero en la diagonal de U. La factorizacion LU puede fallar.");
+                }
+                L[j][i] = (A[j][i] - sum) / U[i][i];
+            }
+        }
+    }
+}
+
+// Resuelve Ax = b usando LU Forma 2
+double* lu_forma2_sol(double **A, double *b, int n) {
+    double **L = zeros_mat(n, n);
+    double **U = zeros_mat(n, n);
+    double *z = new double[n];
+    double *x = new double[n];
+
+    // 1. Obtener L y U a trav√©s de la nueva funci√≥n void
+    lu_forma2(A, n, L, U);
+
+    // 2. Lz = b (Sustituci√≥n progresiva)
+    for (int i = 0; i < n; i++) {
+        double sum = 0.0;
+        for (int j = 0; j < i; j++) sum += L[i][j] * z[j];
+        z[i] = b[i] - sum;
+    }
+    
+    // 3. Ux = z (Sustituci√≥n regresiva)
+    for (int i = n - 1; i >= 0; i--) {
+        double sum = 0.0;
+        for (int j = i + 1; j < n; j++) sum += U[i][j] * x[j];
+        x[i] = (z[i] - sum) / U[i][i];
+    }
+
+    del_mat(L, n); 
+    del_mat(U, n); 
+    delete[] z;
+    
+    return x;
+}
+
+// ----------------------------------------------------------------------------
+// 2. METODOS DE ELIMINACION Y MATRICES SINGULARES (Gauss y Gauss-Jordan)
+// ----------------------------------------------------------------------------
+
+// Eliminaci√≥n de Gauss con pivoteo parcial
+double* gauss_solve(double **A, double *b, int n) {
+    // Trabajamos sobre copias para no destruir las matrices originales
+    double **M = coppy_mat(A, n, n);
+    double *vb = copy_vect(b, n);
+    double *x = new double[n];
+
+    for (int j = 0; j < n - 1; j++) {
+        // 1. Pivoteo parcial para evitar divisi√≥n por cero y reducir errores de redondeo
+        double pivote = fabs(M[j][j]);
+        int filapivote = j;
+        for (int i = j + 1; i < n; i++) {
+            if (fabs(M[i][j]) > pivote) {
+                pivote = fabs(M[i][j]);
+                filapivote = i;
+            }
+        }
+
+        // Intercambio de filas si es necesario
+        if (filapivote != j) {
+            for (int k = 0; k < n; k++) intercambiar_elem(M[j][k], M[filapivote][k]);
+            intercambiar_elem(vb[j], vb[filapivote]);
+        }
+
+        if (fabs(M[j][j]) < 1e-12) {
+            print_error("Matriz singular o casi singular detectada en Gauss.");
+            return NULL;
+        }
+
+        // 2. Hacer ceros por debajo de la diagonal
+        for (int i = j + 1; i < n; i++) {
+            double factor = M[i][j] / M[j][j]; // Raz√≥n de coeficientes
+            for (int k = j; k < n; k++) {
+                M[i][k] = M[i][k] - factor * M[j][k];
+            }
+            vb[i] = vb[i] - factor * vb[j];
+        }
+    }
+
+    // 3. Sustituci√≥n regresiva
+    for (int j = n - 1; j >= 0; j--) {
+        x[j] = vb[j];
+        for (int k = j + 1; k < n; k++) {
+            x[j] = x[j] - M[j][k] * x[k];
+        }
+        x[j] = x[j] / M[j][j];
+    }
+
+    del_mat(M, n); delete[] vb;
+    return x;
+}
+
+// M√©todo de Gauss-Jordan (Diagonal a 1, ceros arriba y abajo)
+double* gauss_jordan_solve(double **A, double *b, int n) {
+    double **M = coppy_mat(A, n, n);
+    double *vb = copy_vect(b, n);
+    
+    for (int i = 0; i < n; i++) {
+        // Pivoteo
+        double pivote = fabs(M[i][i]);
+        int filapivote = i;
+        for (int k = i + 1; k < n; k++) {
+            if (fabs(M[k][i]) > pivote) {
+                pivote = fabs(M[k][i]);
+                filapivote = k;
+            }
+        }
+        if (filapivote != i) {
+            for (int k = 0; k < n; k++) intercambiar_elem(M[i][k], M[filapivote][k]);
+            intercambiar_elem(vb[i], vb[filapivote]);
+        }
+        
+        // Normalizar la fila pivote para que el elemento diagonal sea 1
+        double divisor = M[i][i];
+        if (fabs(divisor) < 1e-12) {
+            print_error("Matriz singular detectada en Gauss-Jordan.");
+            return NULL;
+        }
+        for (int j = 0; j < n; j++) M[i][j] /= divisor;
+        vb[i] /= divisor;
+        
+        // Hacer cero el resto de la columna i (por encima y por debajo)
+        for (int k = 0; k < n; k++) {
+            if (k != i) {
+                double factor = M[k][i];
+                for (int j = 0; j < n; j++) M[k][j] -= factor * M[i][j];
+                vb[k] -= factor * vb[i];
+            }
+        }
+    }
+    
+    del_mat(M, n); 
+    return vb; // vb se ha transformado en el vector soluci√≥n
+}
+
+
+// ----------------------------------------------------------------------------
+// 3. SISTEMAS ESPECIALES
+// ----------------------------------------------------------------------------
+
+// Algoritmo de Thomas (Sistemas Tridiagonales)
+// Los vectores a, b, c son las diagonales (inferior, principal, superior)
+
+// Se le pasa la matriz completa A y el vector independiente f.
+// La funcion extrae las diagonales automaticamente.
+double* tridiag_solve(double **A, double *f, int n) {
+    // 1. Extraccion de las diagonales de la matriz A
+    double *a = new double[n - 1]; // Diagonal inferior
+    double *b = new double[n];     // Diagonal principal
+    double *c = new double[n - 1]; // Diagonal superior
+
+    for (int i = 0; i < n; i++) {
+        b[i] = A[i][i];
+        if (i < n - 1) {
+            a[i] = A[i + 1][i]; // Elemento justo debajo de la diagonal
+            c[i] = A[i][i + 1]; // Elemento justo encima de la diagonal
+        }
+    }
+
+    // 2. Vectores auxiliares para el Algoritmo de Thomas
+    double *alpha = new double[n];
+    double *beta = new double[n];
+    double *z = new double[n];
+    double *x = new double[n];
+
+    // Paso 1: Factorizaci√≥n LU y Sustituci√≥n Progresiva (L * z = f)
+    beta[0] = b[0];
+    z[0] = f[0];
+
+    for (int i = 1; i < n; i++) {
+        if (beta[i - 1] == 0.0) {
+            print_warning("Cero en la diagonal durante el algoritmo de Thomas (posible division por cero).");
+        }
+        alpha[i] = a[i - 1] / beta[i - 1];
+        beta[i] = b[i] - alpha[i] * c[i - 1];
+        z[i] = f[i] - alpha[i] * z[i - 1];
+    }
+
+    // Paso 2: Sustituci√≥n Regresiva (U * x = z)
+    x[n - 1] = z[n - 1] / beta[n - 1];
+    for (int i = n - 2; i >= 0; i--) {
+        x[i] = (z[i] - c[i] * x[i + 1]) / beta[i];
+    }
+
+    // 3. Liberar toda la memoria temporal utilizada
+    delete[] a; 
+    delete[] b; 
+    delete[] c;
+    delete[] alpha; 
+    delete[] beta; 
+    delete[] z;
+
+    return x;
+}
+
+
+// ----------------------------------------------------------------------------
+// 4. METODOS ITERATIVOS
+// ----------------------------------------------------------------------------
+
+/// Funci√≥n Auxiliar: Comprueba estrictamente si una matriz es diagonalmente dominante
+bool check_dominancia(double **A, int n) {
+    for (int i = 0; i < n; i++) {
+        double sum = 0.0;
+        for (int j = 0; j < n; j++) {
+            if (i != j) sum += fabs(A[i][j]);
+        }
+        // Condici√≥n te√≥rica: |A_ii| >= sum_{j!=i} |A_ij|
+        if (fabs(A[i][i]) < sum) {
+            return false; 
+        }
+    }
+    return true;
+}
+
+// Funci√≥n Auxiliar: Reordena las filas (A y b) solo si la matriz no es dominante de entrada
+bool reorder_diagonals(double **A, double *b, int n) {
+    // 1. Si ya es dominante de f√°brica, no alteramos el sistema original
+    if (check_dominancia(A, n)) {
+        return true; 
+    }
+
+    // 2. Si no lo es, intentamos rescatarla reordenando el mayor elemento a la diagonal
+    bool swapped = false;
+    for (int i = 0; i < n; i++) {
+        int max_row = i;
+        double max_val = fabs(A[i][i]);
+        
+        for (int k = i + 1; k < n; k++) {
+            if (fabs(A[k][i]) > max_val) {
+                max_val = fabs(A[k][i]);
+                max_row = k;
+            }
+        }
+        
+        if (max_row != i) {
+            for (int j = 0; j < n; j++) {
+                intercambiar_elem(A[i][j], A[max_row][j]);
+            }
+            intercambiar_elem(b[i], b[max_row]);
+            swapped = true;
+        }
+    }
+    
+    // 3. Comprobar si el "Plan B" (reordenamiento) logr√≥ hacerla dominante
+    bool es_dominante = check_dominancia(A, n);
+    
+    if (swapped) print_info("El sistema original no era optimo. Ha sido reordenado por filas.");
+    if (!es_dominante) {
+        print_warning("Incluso tras reordenar, la matriz no es diagonalmente dominante. La convergencia NO esta garantizada.");
+    }
+    
+    return es_dominante;
+}
+
+
+// M√©todo Iterativo de Jacobi (Desplazamientos simult√°neos)
+double* jacobi_solve(double **A, double *b, int n, double tol, int max_iter) {
+    // 1. Trabajamos con copias para no destruir las matrices originales del main
+    double **M = coppy_mat(A, n, n);
+    double *vb = copy_vect(b, n);
+    
+    // 2. Intentar hacer la matriz diagonalmente dominante
+    reorder_diagonals(M, vb, n);
+
+    double *oldx = new double[n];
+    double *newx = new double[n];
+    
+    // 3. Aproximaci√≥n inicial: x_i^(0) = b_i / A_ii
+    for (int i = 0; i < n; i++) {
+        if (fabs(M[i][i]) < 1e-12) {
+            print_error("Cero en la diagonal detectado. Jacobi no puede continuar.");
+            del_mat(M, n); delete[] vb; delete[] oldx; delete[] newx;
+            return NULL;
+        }
+        oldx[i] = vb[i] / M[i][i];
+    }
+
+    int iter = 0;
+    double error = tol + 1.0;
+
+    // 4. Bucle principal de Jacobi
+    while (error > tol && iter < max_iter) {
+        for (int i = 0; i < n; i++) {
+            newx[i] = vb[i] / M[i][i];
+            for (int j = 0; j < n; j++) {
+                if (j != i) {
+                    // Jacobi usa exclusivamente los valores de la iteraci√≥n anterior oldx[j]
+                    newx[i] = newx[i] - (M[i][j] / M[i][i]) * oldx[j];
+                }
+            }
+        }
+
+        // Calculamos error evaluando la norma euclidiana de la diferencia
+        double *rest = resta_vect(newx, oldx, n);
+        error = mod_vect(rest, n);
+        delete[] rest;
+
+        for (int i = 0; i < n; i++) oldx[i] = newx[i];
+        iter++;
+    }
+    
+    if (iter == max_iter) print_warning("Jacobi alcanzo max_iter sin converger.");
+    
+    del_mat(M, n); delete[] vb; delete[] oldx;
+    return newx;
+}
+
+
+// M√©todo Iterativo de Gauss-Seidel (Desplazamientos sucesivos)
+double* gauss_seidel_solve(double **A, double *b, int n, double tol, int max_iter ) {
+    double **M = coppy_mat(A, n, n);
+    double *vb = copy_vect(b, n);
+    
+    reorder_diagonals(M, vb, n);
+
+    double *oldx = new double[n];
+    double *newx = new double[n];
+    
+    for (int i = 0; i < n; i++) {
+        if (fabs(M[i][i]) < 1e-12) {
+            print_error("Cero en la diagonal detectado. Gauss-Seidel no puede continuar.");
+            del_mat(M, n); delete[] vb; delete[] oldx; delete[] newx;
+            return NULL;
+        }
+        oldx[i] = vb[i] / M[i][i];
+        newx[i] = oldx[i];
+    }
+
+    int iter = 0;
+    double error = tol + 1.0;
+
+    while (error > tol && iter < max_iter) {
+        for (int i = 0; i < n; i++) oldx[i] = newx[i];
+        
+        for (int i = 0; i < n; i++) {
+            newx[i] = vb[i] / M[i][i];
+            for (int j = 0; j < n; j++) {
+                if (j != i) {
+                    // Gauss-Seidel usa newx[j] porque el valor se actualiza inmediatamente
+                    newx[i] = newx[i] - (M[i][j] / M[i][i]) * newx[j]; 
+                }
+            }
+        }
+
+        double *rest = resta_vect(newx, oldx, n);
+        error = mod_vect(rest, n);
+        delete[] rest;
+        
+        iter++;
+    }
+
+    if (iter == max_iter) print_warning("Gauss-Seidel alcanzo max_iter sin converger.");
+
+    del_mat(M, n); delete[] vb; delete[] oldx;
+    return newx;
+}
+
+
+// M√©todo de Sobrerrelajaci√≥n (SOR) - Extensi√≥n de Gauss-Seidel
+// El valor √≥ptimo de w est√° entre 1 y 2. Para w=1 es id√©ntico a Gauss-Seidel.
+double* sor_solve(double **A, double *b, int n, double w, double tol, int max_iter) {
+    if (w <= 0.0 || w >= 2.0) {
+        print_error("El factor de relajacion w debe estar estrictamente entre 0 y 2 para evitar divergencias.");
+        return NULL;
+    }
+
+    double **M = coppy_mat(A, n, n);
+    double *vb = copy_vect(b, n);
+    
+    reorder_diagonals(M, vb, n);
+
+    double *oldx = new double[n];
+    double *newx = new double[n];
+    
+    for (int i = 0; i < n; i++) {
+        if (fabs(M[i][i]) < 1e-12) {
+            print_error("Cero en la diagonal detectado. SOR no puede continuar.");
+            del_mat(M, n); delete[] vb; delete[] oldx; delete[] newx;
+            return NULL;
+        }
+        oldx[i] = vb[i] / M[i][i];
+        newx[i] = oldx[i];
+    }
+
+    int iter = 0;
+    double error = tol + 1.0;
+
+    while (error > tol && iter < max_iter) {
+        for (int i = 0; i < n; i++) oldx[i] = newx[i];
+        
+        for (int i = 0; i < n; i++) {
+            // Calcular el valor temporal como si fuera Gauss-Seidel
+            double sum = 0.0;
+            for (int j = 0; j < n; j++) {
+                if (j != i) {
+                    sum += M[i][j] * newx[j];
+                }
+            }
+            
+            // Aplicar la correcci√≥n con el factor de relajaci√≥n w multiplicando al residuo
+            newx[i] = oldx[i] + (w / M[i][i]) * (vb[i] - sum - M[i][i] * oldx[i]);
+        }
+
+        double *rest = resta_vect(newx, oldx, n);
+        error = mod_vect(rest, n);
+        delete[] rest;
+        
+        iter++;
+    }
+
+    if (iter == max_iter) print_warning("SOR alcanzo max_iter sin converger.");
+
+    del_mat(M, n); delete[] vb; delete[] oldx;
+    return newx;
+}
+
+
+
+// ============================================================================
+// DETERMINANTES E INVERSAS (M√öLTIPLES M√âTODOS)
+// ============================================================================
+
+// 1A. Determinante usando Eliminaci√≥n Gaussiana (con pivoteo)
+double det_gauss(double **A, int n) {
+    double **M = coppy_mat(A, n, n);
+    double det = 1.0;
+    int swaps = 0;
+
+    for (int j = 0; j < n - 1; j++) {
+        double pivote = fabs(M[j][j]);
+        int filapivote = j;
+        for (int i = j + 1; i < n; i++) {
+            if (fabs(M[i][j]) > pivote) {
+                pivote = fabs(M[i][j]);
+                filapivote = i;
+            }
+        }
+
+        if (filapivote != j) {
+            for (int k = 0; k < n; k++) intercambiar_elem(M[j][k], M[filapivote][k]);
+            swaps++; // Contamos los intercambios de filas
+        }
+
+        if (fabs(M[j][j]) < 1e-12) {
+            del_mat(M, n);
+            return 0.0; // Rango menor que n, determinante es cero
+        }
+
+        for (int i = j + 1; i < n; i++) {
+            double factor = M[i][j] / M[j][j];
+            for (int k = j; k < n; k++) {
+                M[i][k] = M[i][k] - factor * M[j][k];
+            }
+        }
+    }
+
+    // El determinante es el producto de la diagonal de la matriz triangularizada
+    for (int i = 0; i < n; i++) det *= M[i][i];
+    
+    // Aplicamos (-1)^swaps por los intercambios de filas
+    if (swaps % 2 != 0) det = -det;
+
+    del_mat(M, n);
+    return det;
+}
+
+// 1B. Determinante usando Factorizaci√≥n LU (Doolittle)
+double det_lu(double **A, int n) {
+    double **L = zeros_mat(n, n);
+    double **U = zeros_mat(n, n);
+    
+    // Llamamos a la funci√≥n de descomposici√≥n que creaste antes
+    lu_forma1(A, n, L, U); 
+
+    double det = 1.0;
+    for (int i = 0; i < n; i++) {
+        det *= U[i][i]; // El determinante es el producto de la diagonal de U
+    }
+
+    del_mat(L, n);
+    del_mat(U, n);
+    
+    // Si la diagonal tiene ceros absolutos, el det es 0
+    if (fabs(det) < 1e-12) return 0.0;
+    return det;
+}
+
+// 2A. Inversa de una matriz usando Gauss-Jordan
+double** inv_gj(double **A, int n) {
+    if (fabs(det_gauss(A, n)) < 1e-12) {
+        print_error("No tiene inversa. Matriz singular o determinante cero.");
+        return NULL;
+    }
+
+    // Crear matriz aumentada [A | I] de n x 2n
+    double **M = gen_mat(M, n, 2 * n);
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) M[i][j] = A[i][j];
+        for (int j = n; j < 2 * n; j++) M[i][j] = (j - n == i) ? 1.0 : 0.0;
+    }
+
+    // Reducci√≥n de Gauss-Jordan
+    for (int i = 0; i < n; i++) {
+        // Pivoteo
+        double pivote = fabs(M[i][i]);
+        int filapivote = i;
+        for (int k = i + 1; k < n; k++) {
+            if (fabs(M[k][i]) > pivote) {
+                pivote = fabs(M[k][i]);
+                filapivote = k;
+            }
+        }
+        if (filapivote != i) {
+            for (int k = 0; k < 2 * n; k++) intercambiar_elem(M[i][k], M[filapivote][k]);
+        }
+        
+        // Normalizar
+        double divisor = M[i][i];
+        for (int j = 0; j < 2 * n; j++) M[i][j] /= divisor;
+        
+        // Hacer ceros el resto de la columna
+        for (int k = 0; k < n; k++) {
+            if (k != i) {
+                double factor = M[k][i];
+                for (int j = 0; j < 2 * n; j++) M[k][j] -= factor * M[i][j];
+            }
+        }
+    }
+
+    // Extraer la matriz inversa (la mitad derecha)
+    double **Inv = gen_mat(Inv, n, n);
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            Inv[i][j] = M[i][j + n];
+        }
+    }
+
+    del_mat(M, n);
+    return Inv;
+}
+
+// 2B. Inversa de una matriz usando Factorizaci√≥n LU
+double** inv_lu(double **A, int n) {
+    if (fabs(det_lu(A, n)) < 1e-12) {
+        print_error("No tiene inversa. Matriz singular o determinante cero.");
+        return NULL;
+    }
+
+    double **L = zeros_mat(n, n);
+    double **U = zeros_mat(n, n);
+    lu_forma1(A, n, L, U);
+
+    double **Inv = gen_mat(Inv, n, n);
+    double *e = new double[n]; // Vector para cada columna de la identidad
+    double *z = new double[n]; // Lz = e
+    double *x = new double[n]; // Ux = z
+
+    // Calculamos cada columna de la matriz inversa resolviendo LUx = e
+    for (int col = 0; col < n; col++) {
+        // 1. Generar la columna 'col' de la matriz identidad
+        for (int i = 0; i < n; i++) {
+            e[i] = (i == col) ? 1.0 : 0.0;
+        }
+
+        // 2. Sustituci√≥n progresiva (Lz = e)
+        for (int i = 0; i < n; i++) {
+            double sum = 0.0;
+            for (int j = 0; j < i; j++) sum += L[i][j] * z[j];
+            z[i] = e[i] - sum;
+        }
+
+        // 3. Sustituci√≥n regresiva (Ux = z)
+        for (int i = n - 1; i >= 0; i--) {
+            double sum = 0.0;
+            for (int j = i + 1; j < n; j++) sum += U[i][j] * x[j];
+            x[i] = (z[i] - sum) / U[i][i];
+        }
+
+        // 4. Guardar el resultado en la columna correspondiente de la matriz inversa
+        for (int i = 0; i < n; i++) {
+            Inv[i][col] = x[i];
+        }
+    }
+
+    del_mat(L, n);
+    del_mat(U, n);
+    delete[] e;
+    delete[] z;
+    delete[] x;
+
+    return Inv;
+}
+
+
+
+// ============================================================================
+// SISTEMAS SOBREDETERMINADOS Y REGRESIONES (MINIMOS CUADRADOS)
+// ============================================================================
+
+
+// 0. MOTOR CENTRAL: Resuelve Ax = b para sistemas sobredeterminados (m > n)
+		// Devuelve el vector solucion 'x', y por referencia el vector de 'errores' de 
+							// cada parametro, y el coeficiente de determinacion 'R2'.
+							// -----> Ordinary Least Squares, OLS, minimos cuadrados
+double* ols_reg(double **A, double *b, int m, int n, double *&errores, double &R2) {
+    if (m <= n) {
+        print_error("El sistema no esta sobredeterminado (m debe ser mayor que n).");
+        return NULL;
+    }
+
+    // 1. Ecuaciones normales: (A^T * A) * x = A^T * b
+    double **AT = transpose_mat(A, m, n);
+    double **ATA = prod_mat(AT, A, n, m, m, n);  // Matriz cuadrada (n x n)
+    double *ATb = prod_mat_vect(AT, n, m, b, m); // Vector (n x 1)
+
+    // 2. Resolver el sistema para encontrar los parametros √≥ptimos (x) usando LU Forma 2
+    double *x = lu_forma2_sol(ATA, ATb, n);
+    if (x == NULL) {
+        print_error("Fallo al resolver minimos cuadrados (A^T*A es singular o casi singular).");
+        del_mat(AT, n); del_mat(ATA, n); delete[] ATb;
+        return NULL;
+    }
+
+    // 3. Calculo del coeficiente de determinacion R2
+    double *b_est = prod_mat_vect(A, m, n, x, n);
+    double mean_b = mean_vect(b, m);
+
+    double SS_res = 0.0; // Suma de los residuos al cuadrado
+    double SS_tot = 0.0; // Suma total al cuadrado
+    for (int i = 0; i < m; i++) {
+        SS_res += pow(b[i] - b_est[i], 2);
+        SS_tot += pow(b[i] - mean_b, 2);
+    }
+    R2 = (SS_tot == 0.0) ? 1.0 : (1.0 - (SS_res / SS_tot));
+
+    // 4. Calculo de Errores estadisticos (usando la matriz de covarianza con la inversa LU)
+    double s2 = SS_res / (m - n); // Varianza residual
+    double **ATA_inv = inv_lu(ATA, n); // Cambiado para usar el metodo LU en la inversa
+    errores = new double[n];
+    
+    if (ATA_inv != NULL) {
+        for (int j = 0; j < n; j++) {
+            // Error estandar del parametro j (raiz de la diagonal de la covarianza)
+            errores[j] = sqrt(fabs(s2 * ATA_inv[j][j])); 
+        }
+        del_mat(ATA_inv, n);
+    } else {
+        print_warning("No se pudieron calcular los errores de los parametros mediante LU.");
+        for (int j = 0; j < n; j++) errores[j] = MC_NAN;
+    }
+
+    // Limpieza de memoria
+    del_mat(AT, n);
+    del_mat(ATA, n);
+    delete[] ATb;
+    delete[] b_est;
+
+    return x;
+}
+
+
+// 1. Regresi√≥n Polin√≥mica: y = a0 + a1*x + a2*x^2 + ... + am*x^m
+						// Devuelve un vector con [a0, a1, ..., am]
+double* poly_reg(double *x, double *y, int m_datos, int grado, double *&errores, double &R2) {
+    int n = grado + 1; // Numero de incognitas (parametros)
+    double **A = gen_mat(A, m_datos, n);
+    
+    // Matriz de Vandermonde truncada
+    for (int i = 0; i < m_datos; i++) {
+        for (int j = 0; j < n; j++) {
+            A[i][j] = pow(x[i], j);
+        }
+    }
+    
+    double *params = ols_reg(A, y, m_datos, n, errores, R2);
+    del_mat(A, m_datos);
+    return params;
+}
+
+// 2. Regresi√≥n Lineal: y = a0 + a1*x 
+// (Es simplemente un caso particular de la regresion polinomica de grado 1)
+double* lin_reg(double *x, double *y, int m_datos, double *&errores, double &R2) {
+    return poly_reg(x, y, m_datos, 1, errores, R2);
+}
+
+// 3. Regresi√≥n Exponencial: y = a * e^(bx)
+		// Devuelve [a, b]. Realiza la linealizacion: ln(y) = ln(a) + b*x
+double* exp_reg(double *x, double *y, int m_datos, double *&errores, double &R2) {
+    double *ln_y = new double[m_datos];
+    for (int i = 0; i < m_datos; i++) {
+        if (y[i] <= 0.0) {
+            print_error("Valores de y deben ser positivos para la regresion exponencial.");
+            delete[] ln_y; return NULL;
+        }
+        ln_y[i] = log(y[i]);
+    }
+
+    double *err_lin = NULL;
+    double *params_lin = lin_reg(x, ln_y, m_datos, err_lin, R2);
+    delete[] ln_y;
+
+    if (params_lin == NULL) return NULL;
+
+    double *params = new double[2];
+    params[0] = exp(params_lin[0]); // Deshacemos el ln(a): a = e^A0
+    params[1] = params_lin[1];      // b se mantiene igual
+
+    errores = new double[2];
+    // Propagacion de errores: si A0 = ln(a) -> a = e^A0 -> Error_a = a * Error_A0
+    errores[0] = params[0] * err_lin[0]; 
+    errores[1] = err_lin[1];
+
+    delete[] params_lin;
+    delete[] err_lin;
+    
+    return params;
+}
+
+// 4. Regresi√≥n Logar√≠tmica: y = a + b * ln(x)
+// Devuelve [a, b]. Realiza la linealizacion: Y = a + b*X (con X = ln(x))
+double* regresion_logaritmica(double *x, double *y, int m_datos, double *&errores, double &R2) {
+    double *ln_x = new double[m_datos];
+    for (int i = 0; i < m_datos; i++) {
+        if (x[i] <= 0.0) {
+            print_error("Valores de x deben ser positivos para la regresion logaritmica.");
+            delete[] ln_x; return NULL;
+        }
+        ln_x[i] = log(x[i]);
+    }
+
+    double *params = lin_reg(ln_x, y, m_datos, errores, R2);
+    delete[] ln_x;
+    
+    return params;
+}
+
+// 5. Regresi√≥n Potencial: y = a * x^b
+// Devuelve [a, b]. Realiza linealizacion bilogaritmica: ln(y) = ln(a) + b*ln(x)
+double* regresion_potencial(double *x, double *y, int m_datos, double *&errores, double &R2) {
+    double *ln_x = new double[m_datos];
+    double *ln_y = new double[m_datos];
+    
+    for (int i = 0; i < m_datos; i++) {
+        if (x[i] <= 0.0 || y[i] <= 0.0) {
+            print_error("Valores de x e y deben ser positivos para regresion potencial.");
+            delete[] ln_x; delete[] ln_y; return NULL;
+        }
+        ln_x[i] = log(x[i]);
+        ln_y[i] = log(y[i]);
+    }
+
+    double *err_lin = NULL;
+    double *params_lin = lin_reg(ln_x, ln_y, m_datos, err_lin, R2);
+    delete[] ln_x; delete[] ln_y;
+
+    if (params_lin == NULL) return NULL;
+
+    double *params = new double[2];
+    params[0] = exp(params_lin[0]); // a = e^A0
+    params[1] = params_lin[1];      // b = A1
+
+    errores = new double[2];
+    // Propagacion de errores similar a la exponencial
+    errores[0] = params[0] * err_lin[0];
+    errores[1] = err_lin[1];
+
+    delete[] params_lin;
+    delete[] err_lin;
+    
+    return params;
+}
+
+// 6. Regresi√≥n Sinusoidal / Arm√≥nica: y = a0 + a1*cos(w*x) + a2*sin(w*x)
+// Devuelve [a0, a1, a2]. Requiere que le introduzcas la frecuencia angular 'w'
+double* regresion_sinusoidal(double *x, double *y, int m_datos, double w, double *&errores, double &R2) {
+    int n = 3;
+    double **A = gen_mat(A, m_datos, n);
+    
+    for (int i = 0; i < m_datos; i++) {
+        A[i][0] = 1.0;
+        A[i][1] = cos(w * x[i]);
+        A[i][2] = sin(w * x[i]);
+    }
+    
+    double *params = ols_reg(A, y, m_datos, n, errores, R2);
+    del_mat(A, m_datos);
+    
+    return params;
+}
+
+// ----------------------------------------------------------------------------
+// INTERPOLACION NUMERICA
+// ----------------------------------------------------------------------------
+
+// 7. Interpolacion polin√≥mica de Lagrange para evaluar un punto 'xi' dado un set de datos
+
+	/* A diferencia de la regresi√≥n (que busca la "mejor l√≠nea media" y no toca los puntos),
+	la interpolaci√≥n obliga a que la curva pase exactamente por todos los datos*/
+double lagrange_interp(double *x, double *y, int n, double xi) {
+    double yi = 0.0;
+    for (int i = 0; i < n; i++) {
+        double termino = y[i];
+        for (int j = 0; j < n; j++) {
+            if (j != i) {
+                termino = termino * (xi - x[j]) / (x[i] - x[j]);
+            }
+        }
+        yi += termino;
+    }
+    return yi;
+}
 
