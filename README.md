@@ -296,7 +296,7 @@ Cpp_Physics/
 ### 👨‍🔬 Autor
 
 **César Acosta Martínez** · [@EnDriS10](https://github.com/EnDriS10)
-Estudiante de Física · apasionado de la física computacional
+Estudiante de Física
 
 ⭐ Si este repo te ha servido para estudiar, ¡déjale una estrella!
 
