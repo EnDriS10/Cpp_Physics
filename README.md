@@ -29,7 +29,7 @@ This is the repository for **Computación II** (Computing II), a second-year cou
 | 🧱 **Blocks** | 5 (Introduction → Systems of equations → Eigenvalues → Integration & differentiation → ODEs) |
 | 🧪 **Practicals** | 19, from summing series to the shooting method |
 | 🧰 **Own library** | **Matclub**: ~300 functions for vectors, matrices, solvers, eigenvalues, integration, ODEs and more |
-| 📝 **Exams** | Midterms, controls and finals from 2013 to 2025 |
+| 📝 **Exams** | Midterms and finals from 2013 to 2025 |
 | 📈 **Plotting** | MATLAB helper scripts to plot the `.dat` files written by the C++ programs |
 | 💻 **Language** | C++ (g++ / MinGW) |
 
@@ -237,7 +237,7 @@ Full per-block demo: [`ejemplo_uso.cpp`](Libreria/Matclub%20v2.1/ejemplo_uso.cpp
 A collection of theory and practical exams, ideal to train for the real format of the course.
 
 <details>
-<summary><b>📂 Midterms (2016 – 2019)</b></summary>
+<summary><b>📂 Midterms & finals (2016 – 2019)</b></summary>
 
 - [Midterms 1 & 2 · 2016](Examenes/C2%20-%20Parciales%201%20y%202%20-%202016.pdf)
 - [Midterms 1 & 2 · 2017](Examenes/C2%20-%20Parciales%201%20y%202%20-%202017.pdf)
@@ -246,12 +246,12 @@ A collection of theory and practical exams, ideal to train for the real format o
 </details>
 
 <details>
-<summary><b>📂 Practical controls (2020 – 2025)</b></summary>
+<summary><b>📂 Midterms (2020 – 2025)</b></summary>
 
 - **2020**: two practical exams, with the [full solution of exam 1](Examenes/Controles/2020/Solucion_examen1) (root finding and LU factorisation, with written reports)
 - **2021**: [practical exam 1](Examenes/Controles/2021)
 - **2023**: [Midterm I](Examenes/Controles/2023)
-- **2024**: [first control, with a methane / silicon diagonalisation problem](Examenes/Controles/2024)
+- **2024**: [first midterm, with a methane / silicon diagonalisation problem](Examenes/Controles/2024)
 - **2025**: [exam and source codes](Examenes/Controles/2025)
 
 </details>
@@ -320,7 +320,7 @@ Cpp_Physics/
 │   ├── Matclub v2/      single-file version
 │   ├── Matclub v2.1/    modular version (current)
 │   └── Examenes/        exam kit: single-file Matclub, cheat sheet, MATLAB scripts
-├── 📁 Examenes/    Midterms, controls and finals
+├── 📁 Examenes/    Midterms and finals
 ├── 📁 Informes/    Report template and sample
 └── 💿 Dev-Cpp 5.11 TDM-GCC 4.9.2 Setup.exe
 ```
