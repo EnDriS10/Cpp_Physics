@@ -4,11 +4,19 @@
 // ============================================================================
 // Factorizacion LU (Doolittle y Crout) y resolucion de sistemas con ella.
 //
-// Funciones (4): lu_forma1, lu_forma1_sol, lu_forma2, lu_forma2_sol
+// ARCHIVO INDEPENDIENTE: no necesita ningun otro archivo de MATCLUB.
+// Uso:  #include "factorizacion_lu.cpp"   (con la ruta donde lo tengas)
+// Se pueden incluir varios modulos a la vez: cada funcion esta protegida
+// contra duplicados (#ifndef MC_FN_<nombre>).
+//
+// Funciones propias (4): lu_forma1, lu_forma1_sol, lu_forma2, lu_forma2_sol
+// Dependencias copiadas (4): print_warning, gen_mat, del_mat, zeros_mat
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
 
-#include "../matclub.h"
+#ifndef MATCLUB_FACTORIZACION_LU_CPP
+#define MATCLUB_FACTORIZACION_LU_CPP
+
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -16,9 +24,78 @@
 
 using namespace std;
 
+// ----------------------------------------------------------------------------
+// DEPENDENCIAS (copiadas de otros modulos de MATCLUB, sin modificar)
+// ----------------------------------------------------------------------------
+
+// (copiada de: mensajes)
+#ifndef MC_FN_print_warning
+#define MC_FN_print_warning
+// Aviso: algo no fue perfecto pero el programa puede continuar
+void print_warning(const char* mensaje, const char* detalle = NULL) {
+    cout << "[MATCLUB AVISO]: " << mensaje;
+    if (detalle != NULL) cout << " (" << detalle << ")";
+    cout << endl;
+}
+#endif // MC_FN_print_warning
+
+// (copiada de: matrices)
+#ifndef MC_FN_gen_mat
+#define MC_FN_gen_mat
+//Crear Matriz
+double** gen_mat(double **M, int f, int c){
+	/* en el programa principal si queremos crear (reservar memoria) para la matriz B. 
+   		double **B;
+   		B=crearmatriz(B,fb,cb);
+   	donde fb es el numero de filas de B y cb el numero de columnas de B
+	*/
+    M = new double * [f];
+    	for (int i = 0; i < f; i++) { M[i] = new double[c];}
+     return M;
+}
+#endif // MC_FN_gen_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_del_mat
+#define MC_FN_del_mat
+//Borrar Matriz
+void del_mat(double **M, int f){
+	/* libera la memoria de la matriz pasada en la llamada. Por ejemplo una matriz B.
+	borrarmatriz(B, fb);
+	con fb el nÃºmero de filas de B.
+	*/
+
+	for (int i=0; i < f; i++) {
+    	delete[] M[i];
+    	}
+    delete [] M;
+}
+#endif // MC_FN_del_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_zeros_mat
+#define MC_FN_zeros_mat
+// Matriz de ceros (f x c)
+double** zeros_mat(int f, int c) {
+    double **M;
+    M = gen_mat(M, f, c);
+    for (int i = 0; i < f; i++) {
+        for (int j = 0; j < c; j++) {
+            M[i][j] = 0.0;
+        }
+    }
+    return M;
+}
+#endif // MC_FN_zeros_mat
+
+// ----------------------------------------------------------------------------
+// FUNCIONES DEL MODULO: Sistemas lineales: factorizacion LU
+// ----------------------------------------------------------------------------
+
+#ifndef MC_FN_lu_forma1
+#define MC_FN_lu_forma1
 // Factorización LU (Forma 1 - Descomposición de Doolittle)
 // Las matrices L y U deben estar pre-creadas con zeros_mat(n, n)
-
 void lu_forma1(double **A, int n, double **L, double **U) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
@@ -45,9 +122,11 @@ void lu_forma1(double **A, int n, double **L, double **U) {
         }
     }
 }
+#endif // MC_FN_lu_forma1
 
+#ifndef MC_FN_lu_forma1_sol
+#define MC_FN_lu_forma1_sol
 // Resuelve Ax = b usando LU Forma 1
-
 double* lu_forma1_sol(double **A, double *b, int n) {
     double **L = zeros_mat(n, n);
     double **U = zeros_mat(n, n);
@@ -76,10 +155,12 @@ double* lu_forma1_sol(double **A, double *b, int n) {
     delete[] z;
     return x;
 }
+#endif // MC_FN_lu_forma1_sol
 
+#ifndef MC_FN_lu_forma2
+#define MC_FN_lu_forma2
 // Factorización LU (Forma 2 - Alternando fila U y columna L)
 // Las matrices L y U deben estar pre-creadas con zeros_mat(n, n)
-
 void lu_forma2(double **A, int n, double **L, double **U) {
     for (int i = 0; i < n; i++) {
         // Obtención de una fila de U
@@ -105,9 +186,11 @@ void lu_forma2(double **A, int n, double **L, double **U) {
         }
     }
 }
+#endif // MC_FN_lu_forma2
 
+#ifndef MC_FN_lu_forma2_sol
+#define MC_FN_lu_forma2_sol
 // Resuelve Ax = b usando LU Forma 2
-
 double* lu_forma2_sol(double **A, double *b, int n) {
     double **L = zeros_mat(n, n);
     double **U = zeros_mat(n, n);
@@ -137,4 +220,6 @@ double* lu_forma2_sol(double **A, double *b, int n) {
     
     return x;
 }
+#endif // MC_FN_lu_forma2_sol
 
+#endif // MATCLUB_FACTORIZACION_LU_CPP

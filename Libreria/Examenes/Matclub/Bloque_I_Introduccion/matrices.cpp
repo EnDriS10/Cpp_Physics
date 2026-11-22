@@ -4,11 +4,19 @@
 // ============================================================================
 // Creacion, copia, operaciones basicas, producto, traspuesta, submatrices, filas/columnas, diagonales, busqueda, aleatorias, entrada y salida.
 //
-// Funciones (43): gen_mat, del_mat, prod_mat, input_mat, print_mat, coppy_mat, transpose_mat, zeros_mat, ones_mat, eye_mat, prod_esc_mat, trace_mat, get_row_mat, get_col_mat, suma_mat, resta_mat, prodeach_mat, sub_mat, horzcat_mat, vertcat_mat, flatten_mat, funeach_mat, apply_scalar_vect, apply_scalar_mat, remove_row_col_mat, is_symmetric_mat, swap_rows_mat, swap_cols_mat, find_val_mat, find_gt_mat, sum_all_mat, prod_all_mat, max_mat, max_abs_mat, min_mat, rand_mat, randi_mat, randn_mat, clamp_mat, reshape_mat, diag_mat, get_diag_mat, prod_mat_vect
+// ARCHIVO INDEPENDIENTE: no necesita ningun otro archivo de MATCLUB.
+// Uso:  #include "matrices.cpp"   (con la ruta donde lo tengas)
+// Se pueden incluir varios modulos a la vez: cada funcion esta protegida
+// contra duplicados (#ifndef MC_FN_<nombre>).
+//
+// Funciones propias (43): gen_mat, del_mat, prod_mat, input_mat, print_mat, coppy_mat, transpose_mat, zeros_mat, ones_mat, eye_mat, prod_esc_mat, trace_mat, get_row_mat, get_col_mat, suma_mat, resta_mat, prodeach_mat, sub_mat, horzcat_mat, vertcat_mat, flatten_mat, funeach_mat, apply_scalar_vect, apply_scalar_mat, remove_row_col_mat, is_symmetric_mat, swap_rows_mat, swap_cols_mat, find_val_mat, find_gt_mat, sum_all_mat, prod_all_mat, max_mat, max_abs_mat, min_mat, rand_mat, randi_mat, randn_mat, clamp_mat, reshape_mat, diag_mat, get_diag_mat, prod_mat_vect
+// Dependencias copiadas (2): print_error, print_error_dim
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
 
-#include "../matclub.h"
+#ifndef MATCLUB_MATRICES_CPP
+#define MATCLUB_MATRICES_CPP
+
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -16,8 +24,37 @@
 
 using namespace std;
 
-//Crear Matriz
+// ----------------------------------------------------------------------------
+// DEPENDENCIAS (copiadas de otros modulos de MATCLUB, sin modificar)
+// ----------------------------------------------------------------------------
 
+// (copiada de: mensajes)
+#ifndef MC_FN_print_error
+#define MC_FN_print_error
+void print_error(const char* mensaje, const char* detalle = NULL) {
+    cout << "[MATCLUB ERROR]: " << mensaje;
+    if (detalle != NULL) cout << " (" << detalle << ")";
+    cout << endl;
+}
+#endif // MC_FN_print_error
+
+// (copiada de: mensajes)
+#ifndef MC_FN_print_error_dim
+#define MC_FN_print_error_dim
+// Error de dimensiones: "mensaje (faxca) * (fbxcb)"
+void print_error_dim(const char* mensaje, int fa, int ca, int fb, int cb) {
+    cout << "[MATCLUB ERROR]: " << mensaje
+         << " (" << fa << "x" << ca << ") * (" << fb << "x" << cb << ")" << endl;
+}
+#endif // MC_FN_print_error_dim
+
+// ----------------------------------------------------------------------------
+// FUNCIONES DEL MODULO: Matrices (arrays dinamicos 2D)
+// ----------------------------------------------------------------------------
+
+#ifndef MC_FN_gen_mat
+#define MC_FN_gen_mat
+//Crear Matriz
 double** gen_mat(double **M, int f, int c){
 	/* en el programa principal si queremos crear (reservar memoria) para la matriz B. 
    		double **B;
@@ -28,9 +65,11 @@ double** gen_mat(double **M, int f, int c){
     	for (int i = 0; i < f; i++) { M[i] = new double[c];}
      return M;
 }
+#endif // MC_FN_gen_mat
 
+#ifndef MC_FN_del_mat
+#define MC_FN_del_mat
 //Borrar Matriz
-
 void del_mat(double **M, int f){
 	/* libera la memoria de la matriz pasada en la llamada. Por ejemplo una matriz B.
 	borrarmatriz(B, fb);
@@ -42,9 +81,11 @@ void del_mat(double **M, int f){
     	}
     delete [] M;
 }
+#endif // MC_FN_del_mat
 
+#ifndef MC_FN_prod_mat
+#define MC_FN_prod_mat
 // Multiplicación de matrices (A de fa x ca, B de fb x cb)
-
 double** prod_mat(double **A, double **B, int fa, int ca, int fb, int cb) {
     
     // Validar si se pueden multiplicar (Columnas de A == Filas de B)
@@ -71,9 +112,11 @@ double** prod_mat(double **A, double **B, int fa, int ca, int fb, int cb) {
     
     return Producto;
 }
+#endif // MC_FN_prod_mat
 
+#ifndef MC_FN_input_mat
+#define MC_FN_input_mat
 // Introducir matriz por teclado
-
 double**  input_mat(int f, int c){ 
 /* 
 En el programa principal:
@@ -94,10 +137,12 @@ M=gen_mat(M,f,c);
      } 
 return M;
 } 
+#endif // MC_FN_input_mat
 
+#ifndef MC_FN_print_mat
+#define MC_FN_print_mat
 // Imprimir matriz
-
-void print_mat(double **M, int f, int c, const char* nombre) {
+void print_mat(double **M, int f, int c, const char* nombre = "ans") {
     cout << nombre << " =" << endl;
     cout << "[" << endl;
     for (int i = 0; i < f; i++) {
@@ -109,9 +154,11 @@ void print_mat(double **M, int f, int c, const char* nombre) {
     }
     cout << "]" << endl;
 }
+#endif // MC_FN_print_mat
 
+#ifndef MC_FN_coppy_mat
+#define MC_FN_coppy_mat
 //Copiar la matriz
-
 double** coppy_mat(double **M, int f, int c) {	
   /*Para hacrer una copia de la matriz B en el programa principal.
   	double **Bcopia;
@@ -127,9 +174,11 @@ double** coppy_mat(double **M, int f, int c) {
 		}
 	return Mcopia;
 }
+#endif // MC_FN_coppy_mat
 
+#ifndef MC_FN_transpose_mat
+#define MC_FN_transpose_mat
 //Matriz Transpuesta
-
 double** transpose_mat(double **A, int fa, int ca) {
 /* calcula la transpuesta de una matriz.
 En el programa principal para calcular la transpuesta de una matriz B:
@@ -148,9 +197,11 @@ con fbtrans=cb y cbtrans=fb, fb el numero de filas de B y cb el numero de column
 	}
 	return AT;
 }
+#endif // MC_FN_transpose_mat
 
+#ifndef MC_FN_zeros_mat
+#define MC_FN_zeros_mat
 // Matriz de ceros (f x c)
-
 double** zeros_mat(int f, int c) {
     double **M;
     M = gen_mat(M, f, c);
@@ -161,9 +212,11 @@ double** zeros_mat(int f, int c) {
     }
     return M;
 }
+#endif // MC_FN_zeros_mat
 
+#ifndef MC_FN_ones_mat
+#define MC_FN_ones_mat
 // Matriz de unos (f x c)
-
 double** ones_mat(int f, int c) {
     double **M;
     M = gen_mat(M, f, c);
@@ -174,9 +227,11 @@ double** ones_mat(int f, int c) {
     }
     return M;
 }
+#endif // MC_FN_ones_mat
 
+#ifndef MC_FN_eye_mat
+#define MC_FN_eye_mat
 // Matriz Identidad (n x n), eye(n) en MATLAB
-
 double** eye_mat(int n) {
     double **M;
     M = gen_mat(M, n, n);
@@ -188,9 +243,11 @@ double** eye_mat(int n) {
     }
     return M;
 }
+#endif // MC_FN_eye_mat
 
+#ifndef MC_FN_prod_esc_mat
+#define MC_FN_prod_esc_mat
 // Producto de matriz por escalar
-
 double** prod_esc_mat(double **A, double k, int f, int c) {
     double **M;
     M = gen_mat(M, f, c);
@@ -201,9 +258,11 @@ double** prod_esc_mat(double **A, double k, int f, int c) {
     }
     return M;
 }
+#endif // MC_FN_prod_esc_mat
 
+#ifndef MC_FN_trace_mat
+#define MC_FN_trace_mat
 // Traza de una matriz cuadrada (suma de la diagonal principal)
-
 double trace_mat(double **A, int n) {
     double tr = 0.0;
     for (int i = 0; i < n; i++) {
@@ -211,10 +270,12 @@ double trace_mat(double **A, int n) {
     }
     return tr;
 }
+#endif // MC_FN_trace_mat
 
+#ifndef MC_FN_get_row_mat
+#define MC_FN_get_row_mat
 // Extrae la fila 'fila_idx' de una matriz y la devuelve como un vector dinámico 1D
 					//Importante: LOS CONVIERTE EN UN POINTER, VECT EN ESTA LIBRERIA
-
 double* get_row_mat(double **A, int f, int c, int fila_idx) {
     double *v = new double[c];
     for (int j = 0; j < c; j++) {
@@ -222,10 +283,12 @@ double* get_row_mat(double **A, int f, int c, int fila_idx) {
     }
     return v;
 }
+#endif // MC_FN_get_row_mat
 
+#ifndef MC_FN_get_col_mat
+#define MC_FN_get_col_mat
 // Extrae la columna 'col_idx' de una matriz y la devuelve como un vector dinámico 1D
 					//Importante: LOS CONVIERTE EN UN POINTER, VECT EN ESTA LIBRERIA
-
 double* get_col_mat(double **A, int f, int c, int col_idx) {
     double *v = new double[f];
     for (int i = 0; i < f; i++) {
@@ -233,9 +296,11 @@ double* get_col_mat(double **A, int f, int c, int col_idx) {
     }
     return v;
 }
+#endif // MC_FN_get_col_mat
 
+#ifndef MC_FN_suma_mat
+#define MC_FN_suma_mat
 // Suma de matrices (A + B)
-
 double** suma_mat(double **A, double **B, int f, int c) {
     double **M;
     M = gen_mat(M, f, c);
@@ -246,9 +311,11 @@ double** suma_mat(double **A, double **B, int f, int c) {
     }
     return M;
 }
+#endif // MC_FN_suma_mat
 
+#ifndef MC_FN_resta_mat
+#define MC_FN_resta_mat
 // Resta de matrices (A - B)
-
 double** resta_mat(double **A, double **B, int f, int c) {
     double **M;
     M = gen_mat(M, f, c);
@@ -259,9 +326,11 @@ double** resta_mat(double **A, double **B, int f, int c) {
     }
     return M;
 }
+#endif // MC_FN_resta_mat
 
+#ifndef MC_FN_prodeach_mat
+#define MC_FN_prodeach_mat
 // Producto celda a celda (A .* B en MATLAB)
-
 double** prodeach_mat(double **A, double **B, int f, int c) {
     double **M;
     M = gen_mat(M, f, c);
@@ -272,9 +341,11 @@ double** prodeach_mat(double **A, double **B, int f, int c) {
     }
     return M;
 }
+#endif // MC_FN_prodeach_mat
 
+#ifndef MC_FN_sub_mat
+#define MC_FN_sub_mat
 // Extrae una submatriz desde (f_ini, c_ini) hasta (f_fin, c_fin)
-
 double** sub_mat(double **A, int f_ini, int f_fin, int c_ini, int c_fin) {
     int f_out = f_fin - f_ini + 1;
     int c_out = c_fin - c_ini + 1;
@@ -289,9 +360,11 @@ double** sub_mat(double **A, int f_ini, int f_fin, int c_ini, int c_fin) {
     }
     return M;
 }
+#endif // MC_FN_sub_mat
 
+#ifndef MC_FN_horzcat_mat
+#define MC_FN_horzcat_mat
 // Une dos matrices lado a lado: [A, B]
-
 double** horzcat_mat(double **A, int fa, int ca, double **B, int fb, int cb) {
     if (fa != fb) {
         print_error("No se pueden unir horizontalmente, tienen diferente numero de filas");
@@ -314,9 +387,11 @@ double** horzcat_mat(double **A, int fa, int ca, double **B, int fb, int cb) {
     }
     return M;
 }
+#endif // MC_FN_horzcat_mat
 
+#ifndef MC_FN_vertcat_mat
+#define MC_FN_vertcat_mat
 // Apila una matriz sobre otra: [A; B]
-
 double** vertcat_mat(double **A, int fa, int ca, double **B, int fb, int cb) {
     if (ca != cb) {
         print_error("No se pueden unir verticalmente, tienen diferente numero de columnas");
@@ -339,9 +414,11 @@ double** vertcat_mat(double **A, int fa, int ca, double **B, int fb, int cb) {
     }
     return M;
 }
+#endif // MC_FN_vertcat_mat
 
+#ifndef MC_FN_flatten_mat
+#define MC_FN_flatten_mat
 // Convierte una matriz en un vector 1D (como A(:) en MATLAB, orden columna por columna)
-
 double* flatten_mat(double **A, int f, int c, int &n_out) {
     n_out = f * c;
     double *v = new double[n_out];
@@ -355,9 +432,11 @@ double* flatten_mat(double **A, int f, int c, int &n_out) {
     }
     return v;
 }
+#endif // MC_FN_flatten_mat
 
+#ifndef MC_FN_funeach_mat
+#define MC_FN_funeach_mat
 // Función maestra para matrices usando un puntero a una función de vectores
-
 double** funeach_mat(double **A, int f, int c, double* (*vec_func)(double*, int)) {
     double **M = new double*[f];
     for (int i = 0; i < f; i++) {
@@ -366,9 +445,11 @@ double** funeach_mat(double **A, int f, int c, double* (*vec_func)(double*, int)
     // ejemplo en main: double **A_exp = map_mat(A, f, c, exp_vect);   // Aplica exponencial a la matriz
     return M;
 }
+#endif // MC_FN_funeach_mat
 
+#ifndef MC_FN_apply_scalar_vect
+#define MC_FN_apply_scalar_vect
 // Aplica una función matemática de <cmath> a cada elemento de un vector
-
 double* apply_scalar_vect(double *a, int n, double (*func)(double)) {
     double *c = new double[n];
     for (int i = 0; i < n; i++) {
@@ -376,9 +457,11 @@ double* apply_scalar_vect(double *a, int n, double (*func)(double)) {
     }
     return c;
 }
+#endif // MC_FN_apply_scalar_vect
 
+#ifndef MC_FN_apply_scalar_mat
+#define MC_FN_apply_scalar_mat
 // Aplica una función matemática de <cmath> a cada elemento de una matriz
-
 double** apply_scalar_mat(double **A, int f, int c, double (*func)(double)) {
     double **M = new double*[f];
     for (int i = 0; i < f; i++) {
@@ -386,9 +469,11 @@ double** apply_scalar_mat(double **A, int f, int c, double (*func)(double)) {
     } //double **M_senos = apply_scalar_mat(A, f, c, sin);
     return M;
 }
+#endif // MC_FN_apply_scalar_mat
 
+#ifndef MC_FN_remove_row_col_mat
+#define MC_FN_remove_row_col_mat
 // Devuelve una nueva matriz eliminando la fila 'f_del' y la columna 'c_del'
-
 double** remove_row_col_mat(double **A, int f, int c, int f_del, int c_del) {
     int f_out = f - 1;
     int c_out = c - 1;
@@ -407,9 +492,11 @@ double** remove_row_col_mat(double **A, int f, int c, int f_del, int c_del) {
     }
     return M;
 }
+#endif // MC_FN_remove_row_col_mat
 
+#ifndef MC_FN_is_symmetric_mat
+#define MC_FN_is_symmetric_mat
 // Comprueba si una matriz cuadrada es simétrica
-
 bool is_symmetric_mat(double **A, int n, double tolerancia) {
     for (int i = 0; i < n; i++) {
         for (int j = i + 1; j < n; j++) {
@@ -421,9 +508,11 @@ bool is_symmetric_mat(double **A, int n, double tolerancia) {
     }
     return true;
 }
+#endif // MC_FN_is_symmetric_mat
 
+#ifndef MC_FN_swap_rows_mat
+#define MC_FN_swap_rows_mat
 // Intercambia la fila r1 con la fila r2 (devuelve una nueva matriz)
-
 double** swap_rows_mat(double **A, int f, int c, int r1, int r2) {
     if (r1 < 0 || r1 >= f || r2 < 0 || r2 >= f) {
         print_error("Indices de fila fuera de rango");
@@ -440,9 +529,11 @@ double** swap_rows_mat(double **A, int f, int c, int r1, int r2) {
     
     return M;
 }
+#endif // MC_FN_swap_rows_mat
 
+#ifndef MC_FN_swap_cols_mat
+#define MC_FN_swap_cols_mat
 // Intercambia la columna c1 con la columna c2 (devuelve una nueva matriz)
-
 double** swap_cols_mat(double **A, int f, int c, int c1, int c2) {
     if (c1 < 0 || c1 >= c || c2 < 0 || c2 >= c) {
         print_error("Indices de columna fuera de rango");
@@ -459,11 +550,13 @@ double** swap_cols_mat(double **A, int f, int c, int c1, int c2) {
     
     return M;
 }
+#endif // MC_FN_swap_cols_mat
 
+#ifndef MC_FN_find_val_mat
+#define MC_FN_find_val_mat
 // Busca un valor en la matriz y devuelve su posición (fila y columna) por referencia
 						// Retorna true si lo encuentra, false si no está en la matriz
 						//Poniendo tolerencia a 0 pues es excatamente ese valor
-
 bool find_val_mat(double **A, int f, int c, double val, int &out_f, int &out_c, double tolerancia) {
     for (int i = 0; i < f; i++) {
         for (int j = 0; j < c; j++) {
@@ -476,10 +569,12 @@ bool find_val_mat(double **A, int f, int c, double val, int &out_f, int &out_c, 
     }
     return false; // No se encontró el valor
 }
+#endif // MC_FN_find_val_mat
 
+#ifndef MC_FN_find_gt_mat
+#define MC_FN_find_gt_mat
 // find_mat: Encuentra las coordenadas (filas y columnas) donde los elementos son mayores que un umbral
 								// Devuelve una matriz de n_out x 2 donde cada fila es [fila, columna]
-
 double** find_gt_mat(double **A, int f, int c, double umbral, int &n_out) {
     // 1. Contar cuántos cumplen
     n_out = 0;
@@ -505,9 +600,11 @@ double** find_gt_mat(double **A, int f, int c, double umbral, int &n_out) {
     }
     return coords;
 }
+#endif // MC_FN_find_gt_mat
 
+#ifndef MC_FN_sum_all_mat
+#define MC_FN_sum_all_mat
 // Suma de todos los elementos de la matriz
-
 double sum_all_mat(double **A, int f, int c) {
     double suma = 0.0;
     for (int i = 0; i < f; i++) {
@@ -517,9 +614,11 @@ double sum_all_mat(double **A, int f, int c) {
     }
     return suma;
 }
+#endif // MC_FN_sum_all_mat
 
+#ifndef MC_FN_prod_all_mat
+#define MC_FN_prod_all_mat
 // Producto de todos los elementos de la matriz
-
 double prod_all_mat(double **A, int f, int c) {
     double producto = 1.0;
     for (int i = 0; i < f; i++) {
@@ -529,9 +628,11 @@ double prod_all_mat(double **A, int f, int c) {
     }
     return producto;
 }
+#endif // MC_FN_prod_all_mat
 
+#ifndef MC_FN_max_mat
+#define MC_FN_max_mat
 // Devuelve el valor máximo absoluto de toda la matriz
-
 double max_mat(double **A, int f, int c) {
     double max_v = A[0][0];
     for (int i = 0; i < f; i++) {
@@ -543,9 +644,11 @@ double max_mat(double **A, int f, int c) {
     }
     return max_v;
 }
+#endif // MC_FN_max_mat
 
+#ifndef MC_FN_max_abs_mat
+#define MC_FN_max_abs_mat
 // Valor maximo en valor absoluto de la matriz (este SI es absoluto)
-
 double max_abs_mat(double **A, int f, int c) {
     double m = 0.0;
     for (int i = 0; i < f; i++)
@@ -553,9 +656,11 @@ double max_abs_mat(double **A, int f, int c) {
             if (fabs(A[i][j]) > m) m = fabs(A[i][j]);
     return m;
 }
+#endif // MC_FN_max_abs_mat
 
+#ifndef MC_FN_min_mat
+#define MC_FN_min_mat
 // Devuelve el valor mínimo absoluto de toda la matriz
-
 double min_mat(double **A, int f, int c) {
     double min_v = A[0][0];
     for (int i = 0; i < f; i++) {
@@ -567,9 +672,11 @@ double min_mat(double **A, int f, int c) {
     }
     return min_v;
 }
+#endif // MC_FN_min_mat
 
+#ifndef MC_FN_rand_mat
+#define MC_FN_rand_mat
 // Genera una matriz (f x c) con números aleatorios uniformes entre 0.0 y 1.0 (rand(f,c) en MATLAB)
-
 double** rand_mat(int f, int c) {
     double **M = gen_mat(M, f, c);
     for (int i = 0; i < f; i++) {
@@ -579,9 +686,11 @@ double** rand_mat(int f, int c) {
     }
     return M;
 }
+#endif // MC_FN_rand_mat
 
+#ifndef MC_FN_randi_mat
+#define MC_FN_randi_mat
 // randi_mat: Genera una matriz (f x c) con enteros aleatorios entre min y max
-
 double** randi_mat(int min_val, int max_val, int f, int c) {
     double **M = gen_mat(M, f, c);
     for (int i = 0; i < f; i++) {
@@ -591,9 +700,11 @@ double** randi_mat(int min_val, int max_val, int f, int c) {
     }
     return M;
 }
+#endif // MC_FN_randi_mat
 
+#ifndef MC_FN_randn_mat
+#define MC_FN_randn_mat
 // Genera una matriz (f x c) con distribución normal estándar (randn(f,c) en MATLAB)
-
 double** randn_mat(int f, int c) {
     double **M = gen_mat(M, f, c);
     double PI_ = acos(-1.0);
@@ -607,9 +718,11 @@ double** randn_mat(int f, int c) {
     }
     return M;
 }
+#endif // MC_FN_randn_mat
 
+#ifndef MC_FN_clamp_mat
+#define MC_FN_clamp_mat
 // Limita los valores de una matriz entre un mínimo y un máximo
-
 double** clamp_mat(double **A, int f, int c, double min_val, double max_val) {
     double **M = gen_mat(M, f, c);
     for (int i = 0; i < f; i++) {
@@ -625,9 +738,11 @@ double** clamp_mat(double **A, int f, int c, double min_val, double max_val) {
     }
     return M;
 }
+#endif // MC_FN_clamp_mat
 
+#ifndef MC_FN_reshape_mat
+#define MC_FN_reshape_mat
 // reshape: Reorganiza los datos de una matriz en una nueva de dimensiones (nuevo_f x nuevo_c)
-
 double** reshape_mat(double **A, int f, int c, int nuevo_f, int nuevo_c) {
     if (f * c != nuevo_f * nuevo_c) {
         print_error("El numero total de elementos no coincide para hacer reshape");
@@ -653,25 +768,31 @@ double** reshape_mat(double **A, int f, int c, int nuevo_f, int nuevo_c) {
     
     return M;
 }
+#endif // MC_FN_reshape_mat
 
+#ifndef MC_FN_diag_mat
+#define MC_FN_diag_mat
 // Matriz diagonal n x n a partir de un vector, diag(v) en MATLAB
-
 double** diag_mat(double *v, int n) {
     double **M = zeros_mat(n, n);
     for (int i = 0; i < n; i++) M[i][i] = v[i];
     return M;
 }
+#endif // MC_FN_diag_mat
 
+#ifndef MC_FN_get_diag_mat
+#define MC_FN_get_diag_mat
 // Extrae la diagonal principal de una matriz cuadrada como vector
-
 double* get_diag_mat(double **A, int n) {
     double *d = new double[n];
     for (int i = 0; i < n; i++) d[i] = A[i][i];
     return d;
 }
+#endif // MC_FN_get_diag_mat
 
+#ifndef MC_FN_prod_mat_vect
+#define MC_FN_prod_mat_vect
 // Producto matriz x vector: y = A*x  (A de f x c, x de tamano n = c)
-
 double* prod_mat_vect(double **A, int f, int c, double *x, int n) {
     if (c != n) {
         print_error_dim("prod_mat_vect: dimensiones incompatibles", f, c, n, 1);
@@ -685,4 +806,6 @@ double* prod_mat_vect(double **A, int f, int c, double *x, int n) {
     }
     return y;
 }
+#endif // MC_FN_prod_mat_vect
 
+#endif // MATCLUB_MATRICES_CPP

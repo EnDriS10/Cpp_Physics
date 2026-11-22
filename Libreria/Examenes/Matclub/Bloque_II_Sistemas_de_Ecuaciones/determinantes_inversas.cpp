@@ -4,11 +4,19 @@
 // ============================================================================
 // Determinante e inversa por Gauss, Gauss-Jordan y LU.
 //
-// Funciones (4): det_gauss, det_lu, inv_gj, inv_lu
+// ARCHIVO INDEPENDIENTE: no necesita ningun otro archivo de MATCLUB.
+// Uso:  #include "determinantes_inversas.cpp"   (con la ruta donde lo tengas)
+// Se pueden incluir varios modulos a la vez: cada funcion esta protegida
+// contra duplicados (#ifndef MC_FN_<nombre>).
+//
+// Funciones propias (4): det_gauss, det_lu, inv_gj, inv_lu
+// Dependencias copiadas (8): print_error, print_warning, intercambiar_elem, gen_mat, del_mat, coppy_mat, zeros_mat, lu_forma1
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
 
-#include "../matclub.h"
+#ifndef MATCLUB_DETERMINANTES_INVERSAS_CPP
+#define MATCLUB_DETERMINANTES_INVERSAS_CPP
+
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -16,8 +24,152 @@
 
 using namespace std;
 
-// 1A. Determinante usando Eliminación Gaussiana (con pivoteo)
+// ----------------------------------------------------------------------------
+// DEPENDENCIAS (copiadas de otros modulos de MATCLUB, sin modificar)
+// ----------------------------------------------------------------------------
 
+// (copiada de: mensajes)
+#ifndef MC_FN_print_error
+#define MC_FN_print_error
+void print_error(const char* mensaje, const char* detalle = NULL) {
+    cout << "[MATCLUB ERROR]: " << mensaje;
+    if (detalle != NULL) cout << " (" << detalle << ")";
+    cout << endl;
+}
+#endif // MC_FN_print_error
+
+// (copiada de: mensajes)
+#ifndef MC_FN_print_warning
+#define MC_FN_print_warning
+// Aviso: algo no fue perfecto pero el programa puede continuar
+void print_warning(const char* mensaje, const char* detalle = NULL) {
+    cout << "[MATCLUB AVISO]: " << mensaje;
+    if (detalle != NULL) cout << " (" << detalle << ")";
+    cout << endl;
+}
+#endif // MC_FN_print_warning
+
+// (copiada de: auxiliares)
+#ifndef MC_FN_intercambiar_elem
+#define MC_FN_intercambiar_elem
+//Intercambia dos elementos
+void intercambiar_elem(double &a, double &b) {
+    double temp = a;
+    a = b;
+    b = temp;
+}
+#endif // MC_FN_intercambiar_elem
+
+// (copiada de: matrices)
+#ifndef MC_FN_gen_mat
+#define MC_FN_gen_mat
+//Crear Matriz
+double** gen_mat(double **M, int f, int c){
+	/* en el programa principal si queremos crear (reservar memoria) para la matriz B. 
+   		double **B;
+   		B=crearmatriz(B,fb,cb);
+   	donde fb es el numero de filas de B y cb el numero de columnas de B
+	*/
+    M = new double * [f];
+    	for (int i = 0; i < f; i++) { M[i] = new double[c];}
+     return M;
+}
+#endif // MC_FN_gen_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_del_mat
+#define MC_FN_del_mat
+//Borrar Matriz
+void del_mat(double **M, int f){
+	/* libera la memoria de la matriz pasada en la llamada. Por ejemplo una matriz B.
+	borrarmatriz(B, fb);
+	con fb el nÃºmero de filas de B.
+	*/
+
+	for (int i=0; i < f; i++) {
+    	delete[] M[i];
+    	}
+    delete [] M;
+}
+#endif // MC_FN_del_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_coppy_mat
+#define MC_FN_coppy_mat
+//Copiar la matriz
+double** coppy_mat(double **M, int f, int c) {	
+  /*Para hacrer una copia de la matriz B en el programa principal.
+  	double **Bcopia;
+	Bcopia=crearmatriz(Bcopia,fb,cb);
+	Bcopia=copiarmatriz(fb,cb);
+	con fb el numero de filas de b y cb el numero de columnas de b
+  */
+  
+   double **Mcopia;
+   Mcopia=gen_mat(Mcopia,f,c);
+	for (int i = 0; i < f; i++){
+		for (int j = 0; j < c; j++) {Mcopia[i][j] = M[i][j];}
+		}
+	return Mcopia;
+}
+#endif // MC_FN_coppy_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_zeros_mat
+#define MC_FN_zeros_mat
+// Matriz de ceros (f x c)
+double** zeros_mat(int f, int c) {
+    double **M;
+    M = gen_mat(M, f, c);
+    for (int i = 0; i < f; i++) {
+        for (int j = 0; j < c; j++) {
+            M[i][j] = 0.0;
+        }
+    }
+    return M;
+}
+#endif // MC_FN_zeros_mat
+
+// (copiada de: factorizacion_lu)
+#ifndef MC_FN_lu_forma1
+#define MC_FN_lu_forma1
+// Factorización LU (Forma 1 - Descomposición de Doolittle)
+// Las matrices L y U deben estar pre-creadas con zeros_mat(n, n)
+void lu_forma1(double **A, int n, double **L, double **U) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (i <= j) {
+                // Elementos de U (diagonal y por encima)
+                double sum = 0.0;
+                for (int k = 0; k < i; k++) sum += L[i][k] * U[k][j];
+                U[i][j] = A[i][j] - sum;
+
+                // Diagonal de L es 1.0 (Doolittle)
+                if (i == j) L[i][j] = 1.0; 
+                else L[i][j] = 0.0;
+            } else {
+                // Elementos de L (por debajo de la diagonal)
+                double sum = 0.0;
+                for (int k = 0; k < j; k++) sum += L[i][k] * U[k][j];
+                
+                if (U[j][j] == 0.0) {
+                    print_warning("Cero en la diagonal de U. La factorizacion LU puede fallar.");
+                }
+                L[i][j] = (A[i][j] - sum) / U[j][j];
+                U[i][j] = 0.0;
+            }
+        }
+    }
+}
+#endif // MC_FN_lu_forma1
+
+// ----------------------------------------------------------------------------
+// FUNCIONES DEL MODULO: Determinantes e inversas
+// ----------------------------------------------------------------------------
+
+#ifndef MC_FN_det_gauss
+#define MC_FN_det_gauss
+// 1A. Determinante usando Eliminación Gaussiana (con pivoteo)
 double det_gauss(double **A, int n) {
     double **M = coppy_mat(A, n, n);
     double det = 1.0;
@@ -60,9 +212,11 @@ double det_gauss(double **A, int n) {
     del_mat(M, n);
     return det;
 }
+#endif // MC_FN_det_gauss
 
+#ifndef MC_FN_det_lu
+#define MC_FN_det_lu
 // 1B. Determinante usando Factorización LU (Doolittle)
-
 double det_lu(double **A, int n) {
     double **L = zeros_mat(n, n);
     double **U = zeros_mat(n, n);
@@ -82,9 +236,11 @@ double det_lu(double **A, int n) {
     if (fabs(det) < 1e-12) return 0.0;
     return det;
 }
+#endif // MC_FN_det_lu
 
+#ifndef MC_FN_inv_gj
+#define MC_FN_inv_gj
 // 2A. Inversa de una matriz usando Gauss-Jordan
-
 double** inv_gj(double **A, int n) {
     if (fabs(det_gauss(A, n)) < 1e-12) {
         print_error("No tiene inversa. Matriz singular o determinante cero.");
@@ -137,9 +293,11 @@ double** inv_gj(double **A, int n) {
     del_mat(M, n);
     return Inv;
 }
+#endif // MC_FN_inv_gj
 
+#ifndef MC_FN_inv_lu
+#define MC_FN_inv_lu
 // 2B. Inversa de una matriz usando Factorización LU
-
 double** inv_lu(double **A, int n) {
     if (fabs(det_lu(A, n)) < 1e-12) {
         print_error("No tiene inversa. Matriz singular o determinante cero.");
@@ -190,4 +348,6 @@ double** inv_lu(double **A, int n) {
 
     return Inv;
 }
+#endif // MC_FN_inv_lu
 
+#endif // MATCLUB_DETERMINANTES_INVERSAS_CPP

@@ -4,11 +4,19 @@
 // ============================================================================
 // Euler, Euler mejorado, Runge-Kutta 4 y Runge-Kutta-Fehlberg para sistemas, y EDO's de orden n.
 //
-// Funciones (7): eval_sys, euler_sys, euler_mejorado_sys, rk4_sys, rkf45_paso_sys, rkf45_sys, rk4_orden_n
+// ARCHIVO INDEPENDIENTE: no necesita ningun otro archivo de MATCLUB.
+// Uso:  #include "edo_sistemas.cpp"   (con la ruta donde lo tengas)
+// Se pueden incluir varios modulos a la vez: cada funcion esta protegida
+// contra duplicados (#ifndef MC_FN_<nombre>).
+//
+// Funciones propias (7): eval_sys, euler_sys, euler_mejorado_sys, rk4_sys, rkf45_paso_sys, rkf45_sys, rk4_orden_n
+// Dependencias copiadas (6): print_error, print_warning, copy_vect, gen_mat, del_mat, zeros_mat
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
 
-#include "../matclub.h"
+#ifndef MATCLUB_EDO_SISTEMAS_CPP
+#define MATCLUB_EDO_SISTEMAS_CPP
+
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -16,16 +24,108 @@
 
 using namespace std;
 
-// Helper: evalua el vector de derivadas dy_i/dt = AF[i](t, y, n)
+// ----------------------------------------------------------------------------
+// DEPENDENCIAS (copiadas de otros modulos de MATCLUB, sin modificar)
+// ----------------------------------------------------------------------------
 
+// (copiada de: mensajes)
+#ifndef MC_FN_print_error
+#define MC_FN_print_error
+void print_error(const char* mensaje, const char* detalle = NULL) {
+    cout << "[MATCLUB ERROR]: " << mensaje;
+    if (detalle != NULL) cout << " (" << detalle << ")";
+    cout << endl;
+}
+#endif // MC_FN_print_error
+
+// (copiada de: mensajes)
+#ifndef MC_FN_print_warning
+#define MC_FN_print_warning
+// Aviso: algo no fue perfecto pero el programa puede continuar
+void print_warning(const char* mensaje, const char* detalle = NULL) {
+    cout << "[MATCLUB AVISO]: " << mensaje;
+    if (detalle != NULL) cout << " (" << detalle << ")";
+    cout << endl;
+}
+#endif // MC_FN_print_warning
+
+// (copiada de: vectores)
+#ifndef MC_FN_copy_vect
+#define MC_FN_copy_vect
+// Copia un vector
+double* copy_vect(double *a, int n) {
+    double *c = new double[n];
+    for (int i = 0; i < n; i++) c[i] = a[i];
+    return c;
+}
+#endif // MC_FN_copy_vect
+
+// (copiada de: matrices)
+#ifndef MC_FN_gen_mat
+#define MC_FN_gen_mat
+//Crear Matriz
+double** gen_mat(double **M, int f, int c){
+	/* en el programa principal si queremos crear (reservar memoria) para la matriz B. 
+   		double **B;
+   		B=crearmatriz(B,fb,cb);
+   	donde fb es el numero de filas de B y cb el numero de columnas de B
+	*/
+    M = new double * [f];
+    	for (int i = 0; i < f; i++) { M[i] = new double[c];}
+     return M;
+}
+#endif // MC_FN_gen_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_del_mat
+#define MC_FN_del_mat
+//Borrar Matriz
+void del_mat(double **M, int f){
+	/* libera la memoria de la matriz pasada en la llamada. Por ejemplo una matriz B.
+	borrarmatriz(B, fb);
+	con fb el nÃºmero de filas de B.
+	*/
+
+	for (int i=0; i < f; i++) {
+    	delete[] M[i];
+    	}
+    delete [] M;
+}
+#endif // MC_FN_del_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_zeros_mat
+#define MC_FN_zeros_mat
+// Matriz de ceros (f x c)
+double** zeros_mat(int f, int c) {
+    double **M;
+    M = gen_mat(M, f, c);
+    for (int i = 0; i < f; i++) {
+        for (int j = 0; j < c; j++) {
+            M[i][j] = 0.0;
+        }
+    }
+    return M;
+}
+#endif // MC_FN_zeros_mat
+
+// ----------------------------------------------------------------------------
+// FUNCIONES DEL MODULO: Sistemas de EDO's y EDO's de orden superior
+// ----------------------------------------------------------------------------
+
+#ifndef MC_FN_eval_sys
+#define MC_FN_eval_sys
+// Helper: evalua el vector de derivadas dy_i/dt = AF[i](t, y, n)
 void eval_sys(double (*AF[])(double, double*, int), double t, double *y, int n, double *dy) {
     for (int i = 0; i < n; i++) dy[i] = AF[i](t, y, n);
 }
+#endif // MC_FN_eval_sys
 
+#ifndef MC_FN_euler_sys
+#define MC_FN_euler_sys
 // Método de Euler para sistemas de EDO's
 // Descripción: Resuelve y_i' = AF[i](t, y) con 'n' ecuaciones y condiciones iniciales y0[0..n-1]. Devuelve una matriz (pasos+1) x n (una fila por instante);
 // t_out contiene los tiempos (new[]). Liberar la matriz con del_mat(Y, pasos+1).
-
 double** euler_sys(double (*AF[])(double, double*, int), double t0, double *y0, int n, double tf, int pasos, double *&t_out) {
     /*
     Ejemplo de uso:
@@ -50,10 +150,12 @@ double** euler_sys(double (*AF[])(double, double*, int), double t0, double *y0, 
     delete[] dy;
     return Y;
 }
+#endif // MC_FN_euler_sys
 
+#ifndef MC_FN_euler_mejorado_sys
+#define MC_FN_euler_mejorado_sys
 // Método de Euler mejorado para sistemas de EDO's
 // Descripción: Predictor-corrector aplicado a todas las ecuaciones a la vez ('n_corr' correcciones; 1 = Heun). Mismos argumentos y salida que euler_sys.
-
 double** euler_mejorado_sys(double (*AF[])(double, double*, int), double t0, double *y0, int n, double tf,
                             int pasos, double *&t_out, int n_corr) {
     /*
@@ -80,10 +182,12 @@ double** euler_mejorado_sys(double (*AF[])(double, double*, int), double t0, dou
     delete[] d0; delete[] d1; delete[] yp;
     return Y;
 }
+#endif // MC_FN_euler_mejorado_sys
 
+#ifndef MC_FN_rk4_sys
+#define MC_FN_rk4_sys
 // Método de Runge-Kutta de cuarto orden para sistemas de EDO's
 // Descripción: Calcula en paralelo los vectores k1..k4 de todas las variables dependientes. Mismos argumentos y salida que euler_sys.
-
 double** rk4_sys(double (*AF[])(double, double*, int), double t0, double *y0, int n, double tf, int pasos, double *&t_out) {
     /*
     Ejemplo de uso:
@@ -113,10 +217,12 @@ double** rk4_sys(double (*AF[])(double, double*, int), double t0, double *y0, in
     delete[] k1; delete[] k2; delete[] k3; delete[] k4; delete[] tmp;
     return Y;
 }
+#endif // MC_FN_rk4_sys
 
+#ifndef MC_FN_rkf45_paso_sys
+#define MC_FN_rkf45_paso_sys
 // Paso de Runge-Kutta-Fehlberg para sistemas
 // Descripción: Avanza un paso h desde (t,y) para las n ecuaciones. Devuelve en y5 (n valores, new[]) la solucion de 5o orden y en err el vector y5 - y4 (new[]).
-
 void rkf45_paso_sys(double (*AF[])(double, double*, int), double t, double *y, int n, double h, double *&y5, double *&err) {
     /*
     Ejemplo de uso:
@@ -146,10 +252,12 @@ void rkf45_paso_sys(double (*AF[])(double, double*, int), double t, double *y, i
     del_mat(k, 6);
     delete[] tmp;
 }
+#endif // MC_FN_rkf45_paso_sys
 
+#ifndef MC_FN_rkf45_sys
+#define MC_FN_rkf45_sys
 // Método de Runge-Kutta-Fehlberg adaptativo para sistemas
 // Descripción: Como rkf45_edo pero para n ecuaciones; el error de un paso es el mayor |err_j|. Devuelve una matriz n_out x n (new[]) y t_out con los tiempos.
-
 double** rkf45_sys(double (*AF[])(double, double*, int), double t0, double *y0, int n, double tf, double h0, double tol,
                    int max_pasos, double *&t_out, int &n_out) {
     /*
@@ -195,12 +303,14 @@ double** rkf45_sys(double (*AF[])(double, double*, int), double t0, double *y0, 
     if (pasos >= max_pasos) print_warning("rkf45_sys alcanzo max_pasos antes de llegar a tf.");
     return Y;
 }
+#endif // MC_FN_rkf45_sys
 
+#ifndef MC_FN_rk4_orden_n
+#define MC_FN_rk4_orden_n
 // EDO de orden superior con Runge-Kutta de cuarto orden
 // Descripción: Resuelve y^(m) = f(x, y, y', ..., y^(m-1)) con m = 'orden', convirtiendola en un sistema de m ecuaciones de primer orden (y1 = y, y2 = y', ...).
 // f(x, y, m) recibe el vector y = {y, y', ..., y^(m-1)} y devuelve y^(m). y0[0..m-1] son las condiciones iniciales.
 // Devuelve una matriz (pasos+1) x m: columna 0 = y, columna 1 = y', etc.; x_out contiene las abscisas.
-
 double** rk4_orden_n(double (*f)(double, double*, int), double x0, double *y0, int orden, double xf, int pasos, double *&x_out) {
     /*
     Ejemplo de uso:
@@ -237,4 +347,6 @@ double** rk4_orden_n(double (*f)(double, double*, int), double x0, double *y0, i
     delete[] k1; delete[] k2; delete[] k3; delete[] k4; delete[] tmp;
     return Y;
 }
+#endif // MC_FN_rk4_orden_n
 
+#endif // MATCLUB_EDO_SISTEMAS_CPP

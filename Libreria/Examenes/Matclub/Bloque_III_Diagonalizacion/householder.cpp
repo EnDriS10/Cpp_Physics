@@ -4,11 +4,19 @@
 // ============================================================================
 // Reduccion a forma de Hessenberg superior (tridiagonal si la matriz es simetrica) por eliminacion y por reflexiones de Householder.
 //
-// Funciones (2): hessenberg_mat, hessenberg_householder_mat
+// ARCHIVO INDEPENDIENTE: no necesita ningun otro archivo de MATCLUB.
+// Uso:  #include "householder.cpp"   (con la ruta donde lo tengas)
+// Se pueden incluir varios modulos a la vez: cada funcion esta protegida
+// contra duplicados (#ifndef MC_FN_<nombre>).
+//
+// Funciones propias (2): hessenberg_mat, hessenberg_householder_mat
+// Dependencias copiadas (3): intercambiar_elem, gen_mat, coppy_mat
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
 
-#include "../matclub.h"
+#ifndef MATCLUB_HOUSEHOLDER_CPP
+#define MATCLUB_HOUSEHOLDER_CPP
+
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -16,10 +24,67 @@
 
 using namespace std;
 
+// ----------------------------------------------------------------------------
+// DEPENDENCIAS (copiadas de otros modulos de MATCLUB, sin modificar)
+// ----------------------------------------------------------------------------
+
+// (copiada de: auxiliares)
+#ifndef MC_FN_intercambiar_elem
+#define MC_FN_intercambiar_elem
+//Intercambia dos elementos
+void intercambiar_elem(double &a, double &b) {
+    double temp = a;
+    a = b;
+    b = temp;
+}
+#endif // MC_FN_intercambiar_elem
+
+// (copiada de: matrices)
+#ifndef MC_FN_gen_mat
+#define MC_FN_gen_mat
+//Crear Matriz
+double** gen_mat(double **M, int f, int c){
+	/* en el programa principal si queremos crear (reservar memoria) para la matriz B. 
+   		double **B;
+   		B=crearmatriz(B,fb,cb);
+   	donde fb es el numero de filas de B y cb el numero de columnas de B
+	*/
+    M = new double * [f];
+    	for (int i = 0; i < f; i++) { M[i] = new double[c];}
+     return M;
+}
+#endif // MC_FN_gen_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_coppy_mat
+#define MC_FN_coppy_mat
+//Copiar la matriz
+double** coppy_mat(double **M, int f, int c) {	
+  /*Para hacrer una copia de la matriz B en el programa principal.
+  	double **Bcopia;
+	Bcopia=crearmatriz(Bcopia,fb,cb);
+	Bcopia=copiarmatriz(fb,cb);
+	con fb el numero de filas de b y cb el numero de columnas de b
+  */
+  
+   double **Mcopia;
+   Mcopia=gen_mat(Mcopia,f,c);
+	for (int i = 0; i < f; i++){
+		for (int j = 0; j < c; j++) {Mcopia[i][j] = M[i][j];}
+		}
+	return Mcopia;
+}
+#endif // MC_FN_coppy_mat
+
+// ----------------------------------------------------------------------------
+// FUNCIONES DEL MODULO: Transformacion de Householder (forma de Hessenberg / tridiagonal)
+// ----------------------------------------------------------------------------
+
+#ifndef MC_FN_hessenberg_mat
+#define MC_FN_hessenberg_mat
 // Forma de Hessenberg superior por transformaciones de similaridad (eliminacion)
 // Descripción: Hace cero los elementos por debajo de la subdiagonal con B^-1*A*B (multiplicadores b_i = a_i,m-1 / a_m,m-1, como en la teoria).
 // Si el elemento subdiagonal es cero se intercambian fila y columna con el de mayor magnitud (asi no cambian los autovalores). Devuelve una matriz nueva.
-
 double** hessenberg_mat(double **A, int n) {
     /*
     Ejemplo de uso:
@@ -50,11 +115,13 @@ double** hessenberg_mat(double **A, int n) {
     }
     return H;
 }
+#endif // MC_FN_hessenberg_mat
 
+#ifndef MC_FN_hessenberg_householder_mat
+#define MC_FN_hessenberg_householder_mat
 // Forma de Hessenberg superior por reflexiones de Householder
 // Descripción: Igual que hessenberg_mat pero con reflexiones P = I - 2*v*v^T/(v^T*v) (transformaciones ortogonales, mas estables numericamente).
 // Mantiene los autovalores (P es ortogonal y simetrica: H = P*A*P). Si A es simetrica el resultado es tridiagonal.
-
 double** hessenberg_householder_mat(double **A, int n) {
     /*
     Ejemplo de uso:
@@ -89,4 +156,6 @@ double** hessenberg_householder_mat(double **A, int n) {
     delete[] v;
     return H;
 }
+#endif // MC_FN_hessenberg_householder_mat
 
+#endif // MATCLUB_HOUSEHOLDER_CPP

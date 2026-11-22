@@ -4,11 +4,19 @@
 // ============================================================================
 // Metodo del disparo (con secante) y metodo de las diferencias finitas para problemas de valores de frontera.
 //
-// Funciones (3): ivp_rk4_2o, disparo_edo, dif_finitas_bvp
+// ARCHIVO INDEPENDIENTE: no necesita ningun otro archivo de MATCLUB.
+// Uso:  #include "edo_frontera.cpp"   (con la ruta donde lo tengas)
+// Se pueden incluir varios modulos a la vez: cada funcion esta protegida
+// contra duplicados (#ifndef MC_FN_<nombre>).
+//
+// Funciones propias (3): ivp_rk4_2o, disparo_edo, dif_finitas_bvp
+// Dependencias copiadas (3): print_warning, print_error_int, tridiag_vect_solve
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
 
-#include "../matclub.h"
+#ifndef MATCLUB_EDO_FRONTERA_CPP
+#define MATCLUB_EDO_FRONTERA_CPP
+
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -16,9 +24,74 @@
 
 using namespace std;
 
+// ----------------------------------------------------------------------------
+// DEPENDENCIAS (copiadas de otros modulos de MATCLUB, sin modificar)
+// ----------------------------------------------------------------------------
+
+// (copiada de: mensajes)
+#ifndef MC_FN_print_warning
+#define MC_FN_print_warning
+// Aviso: algo no fue perfecto pero el programa puede continuar
+void print_warning(const char* mensaje, const char* detalle = NULL) {
+    cout << "[MATCLUB AVISO]: " << mensaje;
+    if (detalle != NULL) cout << " (" << detalle << ")";
+    cout << endl;
+}
+#endif // MC_FN_print_warning
+
+// (copiada de: mensajes)
+#ifndef MC_FN_print_error_int
+#define MC_FN_print_error_int
+// Error con un valor entero: "mensaje: valor"
+void print_error_int(const char* mensaje, int valor) {
+    cout << "[MATCLUB ERROR]: " << mensaje << ": " << valor << endl;
+}
+#endif // MC_FN_print_error_int
+
+// (copiada de: sistemas_tridiagonales)
+#ifndef MC_FN_tridiag_vect_solve
+#define MC_FN_tridiag_vect_solve
+// Resolución de sistemas tridiagonales con las diagonales en vectores (Algoritmo de Thomas)
+// Descripción: Resuelve A*x = f para una matriz tridiagonal de n x n SIN construirla: 'a' es la diagonal inferior (a[1..n-1], a[0] no se usa),
+// 'b' la principal (b[0..n-1]) y 'c' la superior (c[0..n-2], c[n-1] no se usa). Es la funcion Tridiag de las practicas (factorizacion LU + sustitucion).
+double* tridiag_vect_solve(double *a, double *b, double *c, double *f, int n) {
+    /*
+    Ejemplo de uso:
+        // [2 -1 0; -1 2 -1; 0 -1 2] * x = [1 0 1]
+        double a[] = {0, -1, -1}, b[] = {2, 2, 2}, c[] = {-1, -1, 0}, f[] = {1, 0, 1};
+        double *x = tridiag_vect_solve(a, b, c, f, 3); // x = {1, 1, 1}
+    */
+    if (n < 1) { print_error_int("tridiag_vect_solve: n debe ser >= 1", n); return NULL; }
+    double *beta = new double[n];
+    double *z = new double[n];
+    double *x = new double[n];
+
+    // Paso 1: Factorización LU y sustitución progresiva (L*z = f)
+    beta[0] = b[0];
+    z[0] = f[0];
+    for (int i = 1; i < n; i++) {
+        if (beta[i - 1] == 0.0) print_warning("Cero en la diagonal durante el algoritmo de Thomas (posible division por cero).");
+        double alpha = a[i] / beta[i - 1];
+        beta[i] = b[i] - alpha * c[i - 1];
+        z[i] = f[i] - alpha * z[i - 1];
+    }
+    // Paso 2: Sustitución regresiva (U*x = z)
+    x[n - 1] = z[n - 1] / beta[n - 1];
+    for (int i = n - 2; i >= 0; i--) x[i] = (z[i] - c[i] * x[i + 1]) / beta[i];
+
+    delete[] beta; delete[] z;
+    return x;
+}
+#endif // MC_FN_tridiag_vect_solve
+
+// ----------------------------------------------------------------------------
+// FUNCIONES DEL MODULO: EDO's con condiciones de frontera
+// ----------------------------------------------------------------------------
+
+#ifndef MC_FN_ivp_rk4_2o
+#define MC_FN_ivp_rk4_2o
 // Helper: resuelve el IVP y'' = f(t,y,y'), y(a) = alfa, y'(a) = p con RK4 y devuelve y(b).
 // Si ys != NULL guarda la solucion en ys[0..n] (n pasos).
-
 double ivp_rk4_2o(double (*f)(double, double, double), double a, double b, double alfa, double p, int n, double *ys) {
     double h = (b - a) / n, t = a, y = alfa, v = p;
     if (ys != NULL) ys[0] = y;
@@ -34,12 +107,14 @@ double ivp_rk4_2o(double (*f)(double, double, double), double a, double b, doubl
     }
     return y;
 }
+#endif // MC_FN_ivp_rk4_2o
 
+#ifndef MC_FN_disparo_edo
+#define MC_FN_disparo_edo
 // Método del disparo (con secante)
 // Descripción: Resuelve el BVP y'' = f(t,y,y'), y(a) = alfa, y(b) = beta. Busca la pendiente inicial p* tal que E(p) = y_p(b) - beta = 0 con el metodo de la secante,
 // resolviendo cada IVP con RK4 y 'n' pasos. Arranque: p0 = (beta-alfa)/(b-a); p1 = p0/2 si p0*E0 > 0, 2*p0 si p0*E0 < 0 (si p0 = 0: p1 = -1 si E0 > 0, +1 si E0 < 0).
 // Devuelve y[0..n] (new[]), x_out con las abscisas y p_out con la pendiente final. Si el BVP es lineal converge en una sola iteracion de la secante.
-
 double* disparo_edo(double (*f)(double, double, double), double a, double b, double alfa, double beta,
                     int n, double tol, int max_iter, double *&x_out, double &p_out) {
     /*
@@ -80,11 +155,13 @@ double* disparo_edo(double (*f)(double, double, double), double a, double b, dou
     for (int i = 0; i <= n; i++) x_out[i] = a + i * h;
     return y;
 }
+#endif // MC_FN_disparo_edo
 
+#ifndef MC_FN_dif_finitas_bvp
+#define MC_FN_dif_finitas_bvp
 // Método de las diferencias finitas para un BVP lineal
 // Descripción: Resuelve y'' = p(t)*y' + q(t)*y + r(t), y(a) = alfa, y(b) = beta con 'N' puntos interiores (h = (b-a)/(N+1)). Sustituye las derivadas por diferencias
 // centrales y resuelve el sistema tridiagonal resultante con tridiag_vect_solve. Devuelve w[0..N+1] (incluye los dos extremos) y x_out con los puntos.
-
 double* dif_finitas_bvp(double (*p)(double), double (*q)(double), double (*r)(double), double a, double b,
                         double alfa, double beta, int N, double *&x_out) {
     /*
@@ -115,4 +192,6 @@ double* dif_finitas_bvp(double (*p)(double), double (*q)(double), double (*r)(do
     delete[] ai; delete[] bi; delete[] ci; delete[] fi; delete[] w_int;
     return w;
 }
+#endif // MC_FN_dif_finitas_bvp
 
+#endif // MATCLUB_EDO_FRONTERA_CPP

@@ -4,11 +4,19 @@
 // ============================================================================
 // Comprobacion de dominancia diagonal, Jacobi, Gauss-Seidel y sobrerrelajacion (SOR).
 //
-// Funciones (5): check_dominancia, reorder_diagonals, jacobi_solve, gauss_seidel_solve, sor_solve
+// ARCHIVO INDEPENDIENTE: no necesita ningun otro archivo de MATCLUB.
+// Uso:  #include "metodos_iterativos.cpp"   (con la ruta donde lo tengas)
+// Se pueden incluir varios modulos a la vez: cada funcion esta protegida
+// contra duplicados (#ifndef MC_FN_<nombre>).
+//
+// Funciones propias (5): check_dominancia, reorder_diagonals, jacobi_solve, gauss_seidel_solve, sor_solve
+// Dependencias copiadas (11): print_error, print_warning, print_info, intercambiar_elem, copy_vect, prod_vect, mod_vect, resta_vect, gen_mat, del_mat, coppy_mat
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
 
-#include "../matclub.h"
+#ifndef MATCLUB_METODOS_ITERATIVOS_CPP
+#define MATCLUB_METODOS_ITERATIVOS_CPP
+
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -16,8 +24,162 @@
 
 using namespace std;
 
-/// Función Auxiliar: Comprueba estrictamente si una matriz es diagonalmente dominante
+// ----------------------------------------------------------------------------
+// DEPENDENCIAS (copiadas de otros modulos de MATCLUB, sin modificar)
+// ----------------------------------------------------------------------------
 
+// (copiada de: mensajes)
+#ifndef MC_FN_print_error
+#define MC_FN_print_error
+void print_error(const char* mensaje, const char* detalle = NULL) {
+    cout << "[MATCLUB ERROR]: " << mensaje;
+    if (detalle != NULL) cout << " (" << detalle << ")";
+    cout << endl;
+}
+#endif // MC_FN_print_error
+
+// (copiada de: mensajes)
+#ifndef MC_FN_print_warning
+#define MC_FN_print_warning
+// Aviso: algo no fue perfecto pero el programa puede continuar
+void print_warning(const char* mensaje, const char* detalle = NULL) {
+    cout << "[MATCLUB AVISO]: " << mensaje;
+    if (detalle != NULL) cout << " (" << detalle << ")";
+    cout << endl;
+}
+#endif // MC_FN_print_warning
+
+// (copiada de: mensajes)
+#ifndef MC_FN_print_info
+#define MC_FN_print_info
+// Informacion (p. ej. "archivo guardado")
+void print_info(const char* mensaje, const char* detalle = NULL) {
+    cout << "[MATCLUB INFO]: " << mensaje;
+    if (detalle != NULL) cout << " (" << detalle << ")";
+    cout << endl;
+}
+#endif // MC_FN_print_info
+
+// (copiada de: auxiliares)
+#ifndef MC_FN_intercambiar_elem
+#define MC_FN_intercambiar_elem
+//Intercambia dos elementos
+void intercambiar_elem(double &a, double &b) {
+    double temp = a;
+    a = b;
+    b = temp;
+}
+#endif // MC_FN_intercambiar_elem
+
+// (copiada de: vectores)
+#ifndef MC_FN_copy_vect
+#define MC_FN_copy_vect
+// Copia un vector
+double* copy_vect(double *a, int n) {
+    double *c = new double[n];
+    for (int i = 0; i < n; i++) c[i] = a[i];
+    return c;
+}
+#endif // MC_FN_copy_vect
+
+// (copiada de: vectores)
+#ifndef MC_FN_prod_vect
+#define MC_FN_prod_vect
+//Producto Punto
+   double prod_vect(double *a,double *b ,int n) { 
+   		double prod=0; 
+   		for ( int i = 0; i<n ; i++){
+		prod = prod + a[i]*b[i];
+		}    
+        return prod; 
+    }
+#endif // MC_FN_prod_vect
+
+// (copiada de: vectores)
+#ifndef MC_FN_mod_vect
+#define MC_FN_mod_vect
+//Modulo Vectorial
+    double mod_vect(double *a,int n) { 
+   		double mod;
+		mod= sqrt(prod_vect(a,a,n)); 
+        return mod; 
+    }   
+#endif // MC_FN_mod_vect
+
+// (copiada de: vectores)
+#ifndef MC_FN_resta_vect
+#define MC_FN_resta_vect
+// Resta de Vectores
+   double* resta_vect(double *a,double *b ,int n) { 
+   		double *c ;		c=new double [n];
+   		for ( int i = 0; i<n ; i++){
+			c[i] = a[i] - b[i];
+		}   
+    return c; 
+	}
+#endif // MC_FN_resta_vect
+
+// (copiada de: matrices)
+#ifndef MC_FN_gen_mat
+#define MC_FN_gen_mat
+//Crear Matriz
+double** gen_mat(double **M, int f, int c){
+	/* en el programa principal si queremos crear (reservar memoria) para la matriz B. 
+   		double **B;
+   		B=crearmatriz(B,fb,cb);
+   	donde fb es el numero de filas de B y cb el numero de columnas de B
+	*/
+    M = new double * [f];
+    	for (int i = 0; i < f; i++) { M[i] = new double[c];}
+     return M;
+}
+#endif // MC_FN_gen_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_del_mat
+#define MC_FN_del_mat
+//Borrar Matriz
+void del_mat(double **M, int f){
+	/* libera la memoria de la matriz pasada en la llamada. Por ejemplo una matriz B.
+	borrarmatriz(B, fb);
+	con fb el nÃºmero de filas de B.
+	*/
+
+	for (int i=0; i < f; i++) {
+    	delete[] M[i];
+    	}
+    delete [] M;
+}
+#endif // MC_FN_del_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_coppy_mat
+#define MC_FN_coppy_mat
+//Copiar la matriz
+double** coppy_mat(double **M, int f, int c) {	
+  /*Para hacrer una copia de la matriz B en el programa principal.
+  	double **Bcopia;
+	Bcopia=crearmatriz(Bcopia,fb,cb);
+	Bcopia=copiarmatriz(fb,cb);
+	con fb el numero de filas de b y cb el numero de columnas de b
+  */
+  
+   double **Mcopia;
+   Mcopia=gen_mat(Mcopia,f,c);
+	for (int i = 0; i < f; i++){
+		for (int j = 0; j < c; j++) {Mcopia[i][j] = M[i][j];}
+		}
+	return Mcopia;
+}
+#endif // MC_FN_coppy_mat
+
+// ----------------------------------------------------------------------------
+// FUNCIONES DEL MODULO: Sistemas lineales: metodos iterativos
+// ----------------------------------------------------------------------------
+
+#ifndef MC_FN_check_dominancia
+#define MC_FN_check_dominancia
+/// Función Auxiliar: Comprueba estrictamente si una matriz es diagonalmente dominante
 bool check_dominancia(double **A, int n) {
     for (int i = 0; i < n; i++) {
         double sum = 0.0;
@@ -31,9 +193,11 @@ bool check_dominancia(double **A, int n) {
     }
     return true;
 }
+#endif // MC_FN_check_dominancia
 
+#ifndef MC_FN_reorder_diagonals
+#define MC_FN_reorder_diagonals
 // Función Auxiliar: Reordena las filas (A y b) solo si la matriz no es dominante de entrada
-
 bool reorder_diagonals(double **A, double *b, int n) {
     // 1. Si ya es dominante de fábrica, no alteramos el sistema original
     if (check_dominancia(A, n)) {
@@ -72,9 +236,11 @@ bool reorder_diagonals(double **A, double *b, int n) {
     
     return es_dominante;
 }
+#endif // MC_FN_reorder_diagonals
 
+#ifndef MC_FN_jacobi_solve
+#define MC_FN_jacobi_solve
 // Método Iterativo de Jacobi (Desplazamientos simultáneos)
-
 double* jacobi_solve(double **A, double *b, int n, double tol, int max_iter) {
     // 1. Trabajamos con copias para no destruir las matrices originales del main
     double **M = coppy_mat(A, n, n);
@@ -125,9 +291,11 @@ double* jacobi_solve(double **A, double *b, int n, double tol, int max_iter) {
     del_mat(M, n); delete[] vb; delete[] oldx;
     return newx;
 }
+#endif // MC_FN_jacobi_solve
 
+#ifndef MC_FN_gauss_seidel_solve
+#define MC_FN_gauss_seidel_solve
 // Método Iterativo de Gauss-Seidel (Desplazamientos sucesivos)
-
 double* gauss_seidel_solve(double **A, double *b, int n, double tol, int max_iter ) {
     double **M = coppy_mat(A, n, n);
     double *vb = copy_vect(b, n);
@@ -175,10 +343,12 @@ double* gauss_seidel_solve(double **A, double *b, int n, double tol, int max_ite
     del_mat(M, n); delete[] vb; delete[] oldx;
     return newx;
 }
+#endif // MC_FN_gauss_seidel_solve
 
+#ifndef MC_FN_sor_solve
+#define MC_FN_sor_solve
 // Método de Sobrerrelajación (SOR) - Extensión de Gauss-Seidel
 // El valor óptimo de w está entre 1 y 2. Para w=1 es idéntico a Gauss-Seidel.
-
 double* sor_solve(double **A, double *b, int n, double w, double tol, int max_iter) {
     if (w <= 0.0 || w >= 2.0) {
         print_error("El factor de relajacion w debe estar estrictamente entre 0 y 2 para evitar divergencias.");
@@ -234,4 +404,6 @@ double* sor_solve(double **A, double *b, int n, double w, double tol, int max_it
     del_mat(M, n); delete[] vb; delete[] oldx;
     return newx;
 }
+#endif // MC_FN_sor_solve
 
+#endif // MATCLUB_METODOS_ITERATIVOS_CPP

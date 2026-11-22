@@ -4,11 +4,19 @@
 // ============================================================================
 // Rotaciones de Jacobi para obtener autovalores y autovectores de matrices simetricas, y ordenacion de los resultados.
 //
-// Funciones (2): jacobi_eig, sort_eig
+// ARCHIVO INDEPENDIENTE: no necesita ningun otro archivo de MATCLUB.
+// Uso:  #include "jacobi.cpp"   (con la ruta donde lo tengas)
+// Se pueden incluir varios modulos a la vez: cada funcion esta protegida
+// contra duplicados (#ifndef MC_FN_<nombre>).
+//
+// Funciones propias (2): jacobi_eig, sort_eig
+// Dependencias copiadas (9): print_error, print_warning, intercambiar_elem, gen_mat, del_mat, coppy_mat, eye_mat, is_symmetric_mat, get_diag_mat
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
 
-#include "../matclub.h"
+#ifndef MATCLUB_JACOBI_CPP
+#define MATCLUB_JACOBI_CPP
+
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -16,11 +24,151 @@
 
 using namespace std;
 
+// ----------------------------------------------------------------------------
+// DEPENDENCIAS (copiadas de otros modulos de MATCLUB, sin modificar)
+// ----------------------------------------------------------------------------
+
+// (copiada de: mensajes)
+#ifndef MC_FN_print_error
+#define MC_FN_print_error
+void print_error(const char* mensaje, const char* detalle = NULL) {
+    cout << "[MATCLUB ERROR]: " << mensaje;
+    if (detalle != NULL) cout << " (" << detalle << ")";
+    cout << endl;
+}
+#endif // MC_FN_print_error
+
+// (copiada de: mensajes)
+#ifndef MC_FN_print_warning
+#define MC_FN_print_warning
+// Aviso: algo no fue perfecto pero el programa puede continuar
+void print_warning(const char* mensaje, const char* detalle = NULL) {
+    cout << "[MATCLUB AVISO]: " << mensaje;
+    if (detalle != NULL) cout << " (" << detalle << ")";
+    cout << endl;
+}
+#endif // MC_FN_print_warning
+
+// (copiada de: auxiliares)
+#ifndef MC_FN_intercambiar_elem
+#define MC_FN_intercambiar_elem
+//Intercambia dos elementos
+void intercambiar_elem(double &a, double &b) {
+    double temp = a;
+    a = b;
+    b = temp;
+}
+#endif // MC_FN_intercambiar_elem
+
+// (copiada de: matrices)
+#ifndef MC_FN_gen_mat
+#define MC_FN_gen_mat
+//Crear Matriz
+double** gen_mat(double **M, int f, int c){
+	/* en el programa principal si queremos crear (reservar memoria) para la matriz B. 
+   		double **B;
+   		B=crearmatriz(B,fb,cb);
+   	donde fb es el numero de filas de B y cb el numero de columnas de B
+	*/
+    M = new double * [f];
+    	for (int i = 0; i < f; i++) { M[i] = new double[c];}
+     return M;
+}
+#endif // MC_FN_gen_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_del_mat
+#define MC_FN_del_mat
+//Borrar Matriz
+void del_mat(double **M, int f){
+	/* libera la memoria de la matriz pasada en la llamada. Por ejemplo una matriz B.
+	borrarmatriz(B, fb);
+	con fb el nÃºmero de filas de B.
+	*/
+
+	for (int i=0; i < f; i++) {
+    	delete[] M[i];
+    	}
+    delete [] M;
+}
+#endif // MC_FN_del_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_coppy_mat
+#define MC_FN_coppy_mat
+//Copiar la matriz
+double** coppy_mat(double **M, int f, int c) {	
+  /*Para hacrer una copia de la matriz B en el programa principal.
+  	double **Bcopia;
+	Bcopia=crearmatriz(Bcopia,fb,cb);
+	Bcopia=copiarmatriz(fb,cb);
+	con fb el numero de filas de b y cb el numero de columnas de b
+  */
+  
+   double **Mcopia;
+   Mcopia=gen_mat(Mcopia,f,c);
+	for (int i = 0; i < f; i++){
+		for (int j = 0; j < c; j++) {Mcopia[i][j] = M[i][j];}
+		}
+	return Mcopia;
+}
+#endif // MC_FN_coppy_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_eye_mat
+#define MC_FN_eye_mat
+// Matriz Identidad (n x n), eye(n) en MATLAB
+double** eye_mat(int n) {
+    double **M;
+    M = gen_mat(M, n, n);
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (i == j) M[i][j] = 1.0;
+            else M[i][j] = 0.0;
+        }
+    }
+    return M;
+}
+#endif // MC_FN_eye_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_is_symmetric_mat
+#define MC_FN_is_symmetric_mat
+// Comprueba si una matriz cuadrada es simétrica
+bool is_symmetric_mat(double **A, int n, double tolerancia) {
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            // Comparamos con un pequeño margen de error por decimales (tolerancia)
+            if (fabs(A[i][j] - A[j][i]) > tolerancia) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+#endif // MC_FN_is_symmetric_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_get_diag_mat
+#define MC_FN_get_diag_mat
+// Extrae la diagonal principal de una matriz cuadrada como vector
+double* get_diag_mat(double **A, int n) {
+    double *d = new double[n];
+    for (int i = 0; i < n; i++) d[i] = A[i][i];
+    return d;
+}
+#endif // MC_FN_get_diag_mat
+
+// ----------------------------------------------------------------------------
+// FUNCIONES DEL MODULO: Diagonalizacion de matrices simetricas: Metodo de Jacobi
+// ----------------------------------------------------------------------------
+
+#ifndef MC_FN_jacobi_eig
+#define MC_FN_jacobi_eig
 // Diagonalización de una matriz simétrica: Método de Jacobi
 // Descripción: Aplica rotaciones planas R_ij(theta) que anulan en cada paso el mayor elemento fuera de la diagonal (ecs. [7] y [8] de la teoria)
 // hasta que todos sean menores que 'tol'. Devuelve la matriz U (new[]) cuyas COLUMNAS son los autovectores; los autovalores se devuelven en L (new[]).
 // 'n_rot' devuelve el numero de rotaciones realizadas. La matriz A no se modifica.
-
 double** jacobi_eig(double **A, int n, double *&L, double tol, int max_iter, int &n_rot) {
     /*
     Ejemplo de uso:
@@ -81,10 +229,12 @@ double** jacobi_eig(double **A, int n, double *&L, double tol, int max_iter, int
     del_mat(B, n);
     return U;
 }
+#endif // MC_FN_jacobi_eig
 
+#ifndef MC_FN_sort_eig
+#define MC_FN_sort_eig
 // Ordenar autovalores y autovectores
 // Descripción: Ordena L en valor absoluto decreciente (como en la teoria: l1 = 4, l2 = -3, l3 = 2) y permuta las columnas de U en consecuencia.
-
 void sort_eig(double *L, double **U, int n) {
     /*
     Ejemplo de uso:
@@ -99,4 +249,6 @@ void sort_eig(double *L, double **U, int n) {
         }
     }
 }
+#endif // MC_FN_sort_eig
 
+#endif // MATCLUB_JACOBI_CPP

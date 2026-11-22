@@ -4,11 +4,19 @@
 // ============================================================================
 // Biseccion, secante y Newton (con version para buscar varias raices en un intervalo).
 //
-// Funciones (5): biseccion, biseccion_multi, secante, newton, newton_multi
+// ARCHIVO INDEPENDIENTE: no necesita ningun otro archivo de MATCLUB.
+// Uso:  #include "ceros_funcion.cpp"   (con la ruta donde lo tengas)
+// Se pueden incluir varios modulos a la vez: cada funcion esta protegida
+// contra duplicados (#ifndef MC_FN_<nombre>).
+//
+// Funciones propias (5): biseccion, biseccion_multi, secante, newton, newton_multi
+// Dependencias copiadas (5): MC_NAN, print_error, intercambiar_elem, isNaN, isRoot
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
 
-#include "../matclub.h"
+#ifndef MATCLUB_CEROS_FUNCION_CPP
+#define MATCLUB_CEROS_FUNCION_CPP
+
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -16,8 +24,63 @@
 
 using namespace std;
 
-// Método de la Biseccion (Una sola raiz)
+// ----------------------------------------------------------------------------
+// DEPENDENCIAS (copiadas de otros modulos de MATCLUB, sin modificar)
+// ----------------------------------------------------------------------------
 
+// (constante global)
+#ifndef MC_FN_MC_NAN
+#define MC_FN_MC_NAN
+const double MC_NAN = sqrt(-1.0);
+#endif // MC_FN_MC_NAN
+
+// (copiada de: mensajes)
+#ifndef MC_FN_print_error
+#define MC_FN_print_error
+void print_error(const char* mensaje, const char* detalle = NULL) {
+    cout << "[MATCLUB ERROR]: " << mensaje;
+    if (detalle != NULL) cout << " (" << detalle << ")";
+    cout << endl;
+}
+#endif // MC_FN_print_error
+
+// (copiada de: auxiliares)
+#ifndef MC_FN_intercambiar_elem
+#define MC_FN_intercambiar_elem
+//Intercambia dos elementos
+void intercambiar_elem(double &a, double &b) {
+    double temp = a;
+    a = b;
+    b = temp;
+}
+#endif // MC_FN_intercambiar_elem
+
+// (copiada de: auxiliares)
+#ifndef MC_FN_isNaN
+#define MC_FN_isNaN
+bool isNaN(double v) {
+    return v != v; // En norma IEEE 754, NaN es distinto de sí mismo
+}
+#endif // MC_FN_isNaN
+
+// (copiada de: auxiliares)
+#ifndef MC_FN_isRoot
+#define MC_FN_isRoot
+bool isRoot(const double* raices, int n, double r, double tol) {
+    for (int i = 0; i < n; ++i) {
+        if (fabs(raices[i] - r) < tol) return true;
+    }
+    return false;
+}
+#endif // MC_FN_isRoot
+
+// ----------------------------------------------------------------------------
+// FUNCIONES DEL MODULO: Busqueda de ceros de una funcion
+// ----------------------------------------------------------------------------
+
+#ifndef MC_FN_biseccion
+#define MC_FN_biseccion
+// Método de la Biseccion (Una sola raiz)
 double biseccion(double (*f)(double), double x1, double x2, 
                  double tol1, double tol2, int max_iter) {
     if (f(x1) * f(x2) >= 0.0) {
@@ -40,9 +103,11 @@ double biseccion(double (*f)(double), double x1, double x2,
 
     return x3;
 }
+#endif // MC_FN_biseccion
 
+#ifndef MC_FN_biseccion_multi
+#define MC_FN_biseccion_multi
 // Biseccion Multiple: Busca multiples raices en un intervalo [a, b]
-
 double* biseccion_multi(double (*f)(double), double a, double b, 
                         int subintervalos, double tol, int &num_raices) {
     
@@ -76,9 +141,11 @@ double* biseccion_multi(double (*f)(double), double a, double b,
     
     return raices;
 }
+#endif // MC_FN_biseccion_multi
 
+#ifndef MC_FN_secante
+#define MC_FN_secante
 // Método de la Secante (Una sola raiz)
-
 double secante(double (*f)(double), double x0, double x1, 
                double tol1, double tol2, int max_iter) {
     if (fabs(f(x0)) < fabs(f(x1))) {
@@ -104,9 +171,11 @@ double secante(double (*f)(double), double x0, double x1,
 
     return x2;
 }
+#endif // MC_FN_secante
 
+#ifndef MC_FN_newton
+#define MC_FN_newton
 // Método de Newton (Una sola raiz)
-
 double newton(double (*f)(double), double (*df)(double), double x0, 
               double tol1, double tol2, int max_iter) {
     double x1 = x0;
@@ -129,9 +198,11 @@ double newton(double (*f)(double), double (*df)(double), double x0,
 
     return x1;
 }
+#endif // MC_FN_newton
 
+#ifndef MC_FN_newton_multi
+#define MC_FN_newton_multi
 // Newton Multiple: Busca multiples raices lanzando Newton desde varios puntos
-
 double* newton_multi(double (*f)(double), double (*df)(double), 
                      double a, double b, int puntos_inicio, double tol, int &num_raices) {
     
@@ -159,4 +230,6 @@ double* newton_multi(double (*f)(double), double (*df)(double),
     
     return raices;
 }
+#endif // MC_FN_newton_multi
 
+#endif // MATCLUB_CEROS_FUNCION_CPP

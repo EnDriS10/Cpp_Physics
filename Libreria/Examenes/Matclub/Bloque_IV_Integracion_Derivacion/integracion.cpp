@@ -4,11 +4,19 @@
 // ============================================================================
 // Trapecio y Simpson (simples y compuestas), Richardson, Romberg, cuadratura de Gauss-Legendre e integrales multiples.
 //
-// Funciones (22): integral_def_func, integral_indef_func, int_vect, nc_trapecio, nc_simpson13, nc_simpson38, trapecio_comp_func, simpson38_comp_func, trapecio_comp_vect, simpson13_comp_vect, simpson38_comp_vect, richardson_int, romberg_mat, romberg_int, gauss_legendre_nodos, gauss_legendre_func, pesos_nc, integral_doble_func, integral_triple_func, integral_doble_mat, gauss_doble_func, gauss_triple_func
+// ARCHIVO INDEPENDIENTE: no necesita ningun otro archivo de MATCLUB.
+// Uso:  #include "integracion.cpp"   (con la ruta donde lo tengas)
+// Se pueden incluir varios modulos a la vez: cada funcion esta protegida
+// contra duplicados (#ifndef MC_FN_<nombre>).
+//
+// Funciones propias (22): integral_def_func, integral_indef_func, int_vect, nc_trapecio, nc_simpson13, nc_simpson38, trapecio_comp_func, simpson38_comp_func, trapecio_comp_vect, simpson13_comp_vect, simpson38_comp_vect, richardson_int, romberg_mat, romberg_int, gauss_legendre_nodos, gauss_legendre_func, pesos_nc, integral_doble_func, integral_triple_func, integral_doble_mat, gauss_doble_func, gauss_triple_func
+// Dependencias copiadas (6): MC_NAN, print_warning, print_error_int, gen_mat, del_mat, zeros_mat
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
 
-#include "../matclub.h"
+#ifndef MATCLUB_INTEGRACION_CPP
+#define MATCLUB_INTEGRACION_CPP
+
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -16,9 +24,93 @@
 
 using namespace std;
 
+// ----------------------------------------------------------------------------
+// DEPENDENCIAS (copiadas de otros modulos de MATCLUB, sin modificar)
+// ----------------------------------------------------------------------------
+
+// (constante global)
+#ifndef MC_FN_MC_NAN
+#define MC_FN_MC_NAN
+const double MC_NAN = sqrt(-1.0);
+#endif // MC_FN_MC_NAN
+
+// (copiada de: mensajes)
+#ifndef MC_FN_print_warning
+#define MC_FN_print_warning
+// Aviso: algo no fue perfecto pero el programa puede continuar
+void print_warning(const char* mensaje, const char* detalle = NULL) {
+    cout << "[MATCLUB AVISO]: " << mensaje;
+    if (detalle != NULL) cout << " (" << detalle << ")";
+    cout << endl;
+}
+#endif // MC_FN_print_warning
+
+// (copiada de: mensajes)
+#ifndef MC_FN_print_error_int
+#define MC_FN_print_error_int
+// Error con un valor entero: "mensaje: valor"
+void print_error_int(const char* mensaje, int valor) {
+    cout << "[MATCLUB ERROR]: " << mensaje << ": " << valor << endl;
+}
+#endif // MC_FN_print_error_int
+
+// (copiada de: matrices)
+#ifndef MC_FN_gen_mat
+#define MC_FN_gen_mat
+//Crear Matriz
+double** gen_mat(double **M, int f, int c){
+	/* en el programa principal si queremos crear (reservar memoria) para la matriz B. 
+   		double **B;
+   		B=crearmatriz(B,fb,cb);
+   	donde fb es el numero de filas de B y cb el numero de columnas de B
+	*/
+    M = new double * [f];
+    	for (int i = 0; i < f; i++) { M[i] = new double[c];}
+     return M;
+}
+#endif // MC_FN_gen_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_del_mat
+#define MC_FN_del_mat
+//Borrar Matriz
+void del_mat(double **M, int f){
+	/* libera la memoria de la matriz pasada en la llamada. Por ejemplo una matriz B.
+	borrarmatriz(B, fb);
+	con fb el nÃºmero de filas de B.
+	*/
+
+	for (int i=0; i < f; i++) {
+    	delete[] M[i];
+    	}
+    delete [] M;
+}
+#endif // MC_FN_del_mat
+
+// (copiada de: matrices)
+#ifndef MC_FN_zeros_mat
+#define MC_FN_zeros_mat
+// Matriz de ceros (f x c)
+double** zeros_mat(int f, int c) {
+    double **M;
+    M = gen_mat(M, f, c);
+    for (int i = 0; i < f; i++) {
+        for (int j = 0; j < c; j++) {
+            M[i][j] = 0.0;
+        }
+    }
+    return M;
+}
+#endif // MC_FN_zeros_mat
+
+// ----------------------------------------------------------------------------
+// FUNCIONES DEL MODULO: Integracion numerica
+// ----------------------------------------------------------------------------
+
+#ifndef MC_FN_integral_def_func
+#define MC_FN_integral_def_func
 // Integral Definida Numérica de una función (Regla de Simpson 1/3)
 // Descripción: Calcula el área bajo la curva de la función 'f' en el intervalo [a, b] con 'n' paneles (n par).
-
 double integral_def_func(double (*f)(double), double a, double b, int n) {
     /*
     Ejemplo de uso:
@@ -37,10 +129,12 @@ double integral_def_func(double (*f)(double), double a, double b, int n) {
     }
     return (h / 3.0) * suma;
 }
+#endif // MC_FN_integral_def_func
 
+#ifndef MC_FN_integral_indef_func
+#define MC_FN_integral_indef_func
 // Integral Indefinida Numérica de una función sobre un dominio discreto
 // Descripción: Evalúa la integral acumulativa de 'f' sobre los puntos del vector 'x', sumando la constante 'C'.
-
 double* integral_indef_func(double (*f)(double), double *x, int n_puntos, double C) {
     /*
     Ejemplo de uso:
@@ -59,11 +153,13 @@ double* integral_indef_func(double (*f)(double), double *x, int n_puntos, double
     }
     return F;
 }
+#endif // MC_FN_integral_indef_func
 
+#ifndef MC_FN_int_vect
+#define MC_FN_int_vect
 // Integral Numérica de datos discretos (Vectorial)
 // Descripción: Calcula la integral definida e indefinida (acumulada) usando la regla del trapecio.
 // Nota: 'int_indef' se devuelve por return, 'int_def' se extrae por referencia (&).
-
 double* int_vect(double *x, double *y, int n, double y0, double &int_def) {
     /*
     Ejemplo de uso:
@@ -89,10 +185,12 @@ double* int_vect(double *x, double *y, int n, double y0, double &int_def) {
     
     return int_indef;
 }
+#endif // MC_FN_int_vect
 
+#ifndef MC_FN_nc_trapecio
+#define MC_FN_nc_trapecio
 // Newton-Cotes cerrada n=1: Regla Trapezoidal simple
 // Descripción: I = h/2*(f(a)+f(b)) con h = b-a. Error = -h^3/12*f''(xi). Exacta para polinomios de grado 1.
-
 double nc_trapecio(double (*f)(double), double a, double b) {
     /*
     Ejemplo de uso:
@@ -101,10 +199,12 @@ double nc_trapecio(double (*f)(double), double a, double b) {
     */
     return (b - a) / 2.0 * (f(a) + f(b));
 }
+#endif // MC_FN_nc_trapecio
 
+#ifndef MC_FN_nc_simpson13
+#define MC_FN_nc_simpson13
 // Newton-Cotes cerrada n=2: Regla de 1/3 de Simpson simple
 // Descripción: I = h/3*(f(x0)+4f(x1)+f(x2)) con h = (b-a)/2. Error = -h^5/90*f''''(xi). Exacta para polinomios de grado <= 3.
-
 double nc_simpson13(double (*f)(double), double a, double b) {
     /*
     Ejemplo de uso:
@@ -113,10 +213,12 @@ double nc_simpson13(double (*f)(double), double a, double b) {
     double h = (b - a) / 2.0;
     return h / 3.0 * (f(a) + 4.0 * f(a + h) + f(b));
 }
+#endif // MC_FN_nc_simpson13
 
+#ifndef MC_FN_nc_simpson38
+#define MC_FN_nc_simpson38
 // Newton-Cotes cerrada n=3: Regla de 3/8 de Simpson simple
 // Descripción: I = 3h/8*(f(x0)+3f(x1)+3f(x2)+f(x3)) con h = (b-a)/3. Error = -3h^5/80*f''''(xi). Exacta para polinomios de grado <= 3.
-
 double nc_simpson38(double (*f)(double), double a, double b) {
     /*
     Ejemplo de uso:
@@ -125,10 +227,12 @@ double nc_simpson38(double (*f)(double), double a, double b) {
     double h = (b - a) / 3.0;
     return 3.0 * h / 8.0 * (f(a) + 3.0 * f(a + h) + 3.0 * f(a + 2.0 * h) + f(b));
 }
+#endif // MC_FN_nc_simpson38
 
+#ifndef MC_FN_trapecio_comp_func
+#define MC_FN_trapecio_comp_func
 // Regla Trapezoidal compuesta (con función)
 // Descripción: Divide [a,b] en 'n' subintervalos y suma trapecios: h*(f0/2 + f1 + ... + f(n-1) + fn/2). Error global O(h^2).
-
 double trapecio_comp_func(double (*f)(double), double a, double b, int n) {
     /*
     Ejemplo de uso:
@@ -140,10 +244,12 @@ double trapecio_comp_func(double (*f)(double), double a, double b, int n) {
     for (int i = 1; i < n; i++) suma += f(a + i * h);
     return h * suma;
 }
+#endif // MC_FN_trapecio_comp_func
 
+#ifndef MC_FN_simpson38_comp_func
+#define MC_FN_simpson38_comp_func
 // Regla de 3/8 de Simpson compuesta (con función)
 // Descripción: Aplica Simpson 3/8 en grupos de 3 subintervalos (n debe ser multiplo de 3; si no lo es se sube al siguiente multiplo). Error global O(h^4).
-
 double simpson38_comp_func(double (*f)(double), double a, double b, int n) {
     /*
     Ejemplo de uso:
@@ -156,10 +262,12 @@ double simpson38_comp_func(double (*f)(double), double a, double b, int n) {
     for (int i = 1; i < n; i++) suma += ((i % 3 == 0) ? 2.0 : 3.0) * f(a + i * h);
     return 3.0 * h / 8.0 * suma;
 }
+#endif // MC_FN_simpson38_comp_func
 
+#ifndef MC_FN_trapecio_comp_vect
+#define MC_FN_trapecio_comp_vect
 // Regla Trapezoidal compuesta (datos tabulados equiespaciados)
 // Descripción: Integra los valores y[0..n_puntos-1] separados una distancia 'h'. (Para espaciado no uniforme usar int_vect).
-
 double trapecio_comp_vect(double *y, int n_puntos, double h) {
     /*
     Ejemplo de uso:
@@ -170,10 +278,12 @@ double trapecio_comp_vect(double *y, int n_puntos, double h) {
     for (int i = 1; i < n_puntos - 1; i++) suma += y[i];
     return h * suma;
 }
+#endif // MC_FN_trapecio_comp_vect
 
+#ifndef MC_FN_simpson13_comp_vect
+#define MC_FN_simpson13_comp_vect
 // Regla de 1/3 de Simpson compuesta (datos tabulados equiespaciados)
 // Descripción: Necesita un numero PAR de subintervalos (n_puntos impar). Si es impar, se usa la regla trapezoidal en el ultimo subintervalo y Simpson en el resto.
-
 double simpson13_comp_vect(double *y, int n_puntos, double h) {
     /*
     Ejemplo de uso:
@@ -191,10 +301,12 @@ double simpson13_comp_vect(double *y, int n_puntos, double h) {
     if (m % 2 == 1) res += h * (y[m - 1] + y[m]) / 2.0;
     return res;
 }
+#endif // MC_FN_simpson13_comp_vect
 
+#ifndef MC_FN_simpson38_comp_vect
+#define MC_FN_simpson38_comp_vect
 // Regla de 3/8 de Simpson compuesta (datos tabulados equiespaciados)
 // Descripción: Necesita que el numero de subintervalos (n_puntos-1) sea multiplo de 3.
-
 double simpson38_comp_vect(double *y, int n_puntos, double h) {
     /*
     Ejemplo de uso:
@@ -206,11 +318,13 @@ double simpson38_comp_vect(double *y, int n_puntos, double h) {
     for (int i = 1; i < m; i++) suma += ((i % 3 == 0) ? 2.0 : 3.0) * y[i];
     return 3.0 * h / 8.0 * suma;
 }
+#endif // MC_FN_simpson38_comp_vect
 
+#ifndef MC_FN_richardson_int
+#define MC_FN_richardson_int
 // Extrapolación de Richardson para integrales
 // Descripción: Combina dos estimaciones I_n1 e I_n2 (con n1 y n2 subintervalos) en una mejorada: I* = I_n1 + (I_n2 - I_n1)/(1 - (n1/n2)^p).
 // p = 2 para la regla trapezoidal y p = 4 para Simpson. Con n2 = 2*n1 equivale a (4*I_n2 - I_n1)/3 (trapecio) o (16*I_n2 - I_n1)/15 (Simpson).
-
 double richardson_int(double I_n1, double I_n2, double n1, double n2, double p) {
     /*
     Ejemplo de uso:
@@ -219,11 +333,13 @@ double richardson_int(double I_n1, double I_n2, double n1, double n2, double p) 
     */
     return I_n1 + (I_n2 - I_n1) / (1.0 - pow(n1 / n2, p));
 }
+#endif // MC_FN_richardson_int
 
+#ifndef MC_FN_romberg_mat
+#define MC_FN_romberg_mat
 // Tabla de Romberg
 // Descripción: Devuelve la matriz T[(N+1)x(N+1)] triangular inferior. T[i][0] es la regla trapezoidal con 2^i subintervalos y
 // T[i][j] = (4^j*T[i][j-1] - T[i-1][j-1])/(4^j - 1) la j-esima extrapolacion de Richardson. Liberar con del_mat(T, N+1).
-
 double** romberg_mat(double (*f)(double), double a, double b, int N) {
     /*
     Ejemplo de uso:
@@ -248,10 +364,12 @@ double** romberg_mat(double (*f)(double), double a, double b, int N) {
     }
     return T;
 }
+#endif // MC_FN_romberg_mat
 
+#ifndef MC_FN_romberg_int
+#define MC_FN_romberg_int
 // Integración de Romberg con criterio de parada
 // Descripción: Aumenta N hasta que dos valores consecutivos de la ultima fila de la tabla difieran menos que 'tol'. N_out devuelve el N usado.
-
 double romberg_int(double (*f)(double), double a, double b, double tol, int N_max, int &N_out) {
     /*
     Ejemplo de uso:
@@ -272,11 +390,13 @@ double romberg_int(double (*f)(double), double a, double b, double tol, int N_ma
     del_mat(T, N_max + 1);
     return res;
 }
+#endif // MC_FN_romberg_int
 
+#ifndef MC_FN_gauss_legendre_nodos
+#define MC_FN_gauss_legendre_nodos
 // Nodos y pesos de la cuadratura de Gauss-Legendre
 // Descripción: Calcula los 'n' nodos x (raices del polinomio de Legendre de grado n, en [-1,1]) y sus pesos w. Exacta para polinomios de grado <= 2n-1.
 // x y w se devuelven por referencia (new[]).
-
 void gauss_legendre_nodos(int n, double *&x, double *&w) {
     /*
     Ejemplo de uso:
@@ -306,10 +426,12 @@ void gauss_legendre_nodos(int n, double *&x, double *&w) {
         w[n - 1 - i] = w[i];
     }
 }
+#endif // MC_FN_gauss_legendre_nodos
 
+#ifndef MC_FN_gauss_legendre_func
+#define MC_FN_gauss_legendre_func
 // Cuadratura gaussiana (Gauss-Legendre) de una función en [a,b]
 // Descripción: Cambio de variable z = ((b-a)*x + b + a)/2 y suma ponderada de 'n' evaluaciones. Muy precisa con pocas evaluaciones si f es suave.
-
 double gauss_legendre_func(double (*f)(double), double a, double b, int n) {
     /*
     Ejemplo de uso:
@@ -323,11 +445,13 @@ double gauss_legendre_func(double (*f)(double), double a, double b, int n) {
     delete[] x; delete[] w;
     return mitad * suma;
 }
+#endif // MC_FN_gauss_legendre_func
 
+#ifndef MC_FN_pesos_nc
+#define MC_FN_pesos_nc
 // Pesos de Newton-Cotes compuestas
 // Descripción: Devuelve los n+1 pesos para 'n' subintervalos de longitud h. regla = 1 (trapecio), 2 (Simpson 1/3, n par) o 3 (Simpson 3/8, n multiplo de 3).
 // Sirve para escribir una integral como suma ponderada sum(w_i*f(x_i)) y extenderla a integrales multiples.
-
 double* pesos_nc(int n, int regla, double h) {
     /*
     Ejemplo de uso:
@@ -346,10 +470,12 @@ double* pesos_nc(int n, int regla, double h) {
     }
     return w;
 }
+#endif // MC_FN_pesos_nc
 
+#ifndef MC_FN_integral_doble_func
+#define MC_FN_integral_doble_func
 // Integral doble de una función f(x,y) sobre [ax,bx] x [ay,by]
 // Descripción: Doble sumatoria sum_j sum_i wy[j]*wx[i]*f(x_i,y_j) con 'nx' y 'ny' subintervalos y la regla elegida en cada direccion (rx, ry = 1, 2 o 3 como en pesos_nc).
-
 double integral_doble_func(double (*f)(double, double), double ax, double bx, double ay, double by,
                            int nx, int ny, int rx, int ry) {
     /*
@@ -368,10 +494,12 @@ double integral_doble_func(double (*f)(double, double), double ax, double bx, do
     delete[] wx; delete[] wy;
     return suma;
 }
+#endif // MC_FN_integral_doble_func
 
+#ifndef MC_FN_integral_triple_func
+#define MC_FN_integral_triple_func
 // Integral triple de una función f(x,y,z) sobre un paralelepipedo
 // Descripción: Triple sumatoria con pesos w_ijk = a_i*b_j*c_k (nx, ny, nz subintervalos; reglas rx, ry, rz = 1, 2 o 3).
-
 double integral_triple_func(double (*f)(double, double, double), double ax, double bx, double ay, double by,
                             double az, double bz, int nx, int ny, int nz, int rx, int ry, int rz) {
     /*
@@ -392,11 +520,13 @@ double integral_triple_func(double (*f)(double, double, double), double ax, doub
     delete[] wx; delete[] wy; delete[] wz;
     return suma;
 }
+#endif // MC_FN_integral_triple_func
 
+#ifndef MC_FN_integral_doble_mat
+#define MC_FN_integral_doble_mat
 // Integral doble de datos tabulados f(x_i, y_j) en una malla equiespaciada
 // Descripción: F es una matriz (ny+1) x (nx+1) con F[j][i] = f(x_i, y_j). Aplica la regla rx en la direccion x y ry en la y (como el ejemplo de la teoria:
 // trapecio en x y Simpson 1/3 en y).
-
 double integral_doble_mat(double **F, int nx, int ny, double hx, double hy, int rx, int ry) {
     /*
     Ejemplo de uso:
@@ -412,10 +542,12 @@ double integral_doble_mat(double **F, int nx, int ny, double hx, double hy, int 
     delete[] wx; delete[] wy;
     return suma;
 }
+#endif // MC_FN_integral_doble_mat
 
+#ifndef MC_FN_gauss_doble_func
+#define MC_FN_gauss_doble_func
 // Integral doble por cuadratura gaussiana
 // Descripción: Usa 'nx' nodos de Gauss-Legendre en x y 'ny' en y (cada direccion puede tener un numero distinto de terminos).
-
 double gauss_doble_func(double (*f)(double, double), double ax, double bx, double ay, double by, int nx, int ny) {
     /*
     Ejemplo de uso:
@@ -432,10 +564,12 @@ double gauss_doble_func(double (*f)(double, double), double ax, double bx, doubl
     delete[] xn; delete[] wx; delete[] yn; delete[] wy;
     return mx * my * suma;
 }
+#endif // MC_FN_gauss_doble_func
 
+#ifndef MC_FN_gauss_triple_func
+#define MC_FN_gauss_triple_func
 // Integral triple por cuadratura gaussiana
 // Descripción: Usa nx, ny y nz nodos de Gauss-Legendre en cada direccion (ejemplo de la teoria: 3 terminos en x y 2 en y, z).
-
 double gauss_triple_func(double (*f)(double, double, double), double ax, double bx, double ay, double by,
                          double az, double bz, int nx, int ny, int nz) {
     /*
@@ -457,4 +591,6 @@ double gauss_triple_func(double (*f)(double, double, double), double ax, double 
     delete[] xn; delete[] wx; delete[] yn; delete[] wy; delete[] zn; delete[] wz;
     return mx * my * mz * suma;
 }
+#endif // MC_FN_gauss_triple_func
 
+#endif // MATCLUB_INTEGRACION_CPP
