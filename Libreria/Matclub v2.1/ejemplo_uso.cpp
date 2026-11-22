@@ -3,7 +3,7 @@
 // Compilar desde la carpeta MATCLUB:   make ejemplo     (o ver README.md)
 // ============================================================================
 
-#include "../matclub.h"
+#include "matclub.h"
 using namespace std;
 
 double f_cuad(double x)  { return x * x - 2.0; }             // raiz: sqrt(2)

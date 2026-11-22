@@ -1,0 +1,460 @@
+// ============================================================================
+// MATCLUB-CPP  |  BLOQUE IV: INTEGRACION Y DERIVACION  |  IV.1
+// Integracion numerica
+// ============================================================================
+// Trapecio y Simpson (simples y compuestas), Richardson, Romberg, cuadratura de Gauss-Legendre e integrales multiples.
+//
+// Funciones (22): integral_def_func, integral_indef_func, int_vect, nc_trapecio, nc_simpson13, nc_simpson38, trapecio_comp_func, simpson38_comp_func, trapecio_comp_vect, simpson13_comp_vect, simpson38_comp_vect, richardson_int, romberg_mat, romberg_int, gauss_legendre_nodos, gauss_legendre_func, pesos_nc, integral_doble_func, integral_triple_func, integral_doble_mat, gauss_doble_func, gauss_triple_func
+// Made by Cesar with a little(to much) help of my friends (Gema y Jose)
+// ============================================================================
+
+#include "../matclub.h"
+#include <iostream>
+#include <iomanip>
+#include <cmath>
+#include <fstream>
+
+using namespace std;
+
+// Integral Definida Numérica de una función (Regla de Simpson 1/3)
+// Descripción: Calcula el área bajo la curva de la función 'f' en el intervalo [a, b] con 'n' paneles (n par).
+
+double integral_def_func(double (*f)(double), double a, double b, int n) {
+    /*
+    Ejemplo de uso:
+        double mi_func(double x) { return x * x; } // f(x) = x^2
+        // Integral de 0 a 2 con 1000 paneles
+        double area = integral_def_func(mi_func, 0.0, 2.0, 1000); 
+    */
+    if (n % 2 != 0) n++; // n debe ser par para Simpson 1/3
+    double h = (b - a) / n;
+    double suma = f(a) + f(b);
+    
+    for (int i = 1; i < n; i++) {
+        double xi = a + i * h;
+        if (i % 2 == 0) suma += 2.0 * f(xi); // Índices pares
+        else            suma += 4.0 * f(xi); // Índices impares
+    }
+    return (h / 3.0) * suma;
+}
+
+// Integral Indefinida Numérica de una función sobre un dominio discreto
+// Descripción: Evalúa la integral acumulativa de 'f' sobre los puntos del vector 'x', sumando la constante 'C'.
+
+double* integral_indef_func(double (*f)(double), double *x, int n_puntos, double C) {
+    /*
+    Ejemplo de uso:
+        double mi_func(double x) { return cos(x); }
+        int n = 100;
+        double *x = linspace(0.0, 3.14, n);
+        double *F_x = integral_indef_func(mi_func, x, n, 0.0); // C = 0
+    */
+    double *F = new double[n_puntos];
+    F[0] = C; // F(x0) = C
+    
+    for (int i = 0; i < n_puntos - 1; i++) {
+        // Área del trapecio entre x[i] y x[i+1]
+        double area = (x[i+1] - x[i]) * (f(x[i]) + f(x[i+1])) / 2.0;
+        F[i+1] = F[i] + area;
+    }
+    return F;
+}
+
+// Integral Numérica de datos discretos (Vectorial)
+// Descripción: Calcula la integral definida e indefinida (acumulada) usando la regla del trapecio.
+// Nota: 'int_indef' se devuelve por return, 'int_def' se extrae por referencia (&).
+
+double* int_vect(double *x, double *y, int n, double y0, double &int_def) {
+    /*
+    Ejemplo de uso:
+        double area_total;
+        double *integral_acumulada = int_vect(x, y, n, 5.0, area_total); // C = 5.0
+        cout << "Integral definida (Area): " << area_total << endl;
+    */
+    if (n < 2) return NULL;
+    
+    double *int_indef = new double[n];
+    int_indef[0] = y0;
+    
+    for (int i = 0; i < n - 1; i++) {
+        double area = (x[i+1] - x[i]) * (y[i] + y[i+1]) / 2.0;
+        int_indef[i+1] = int_indef[i] + area;
+    }
+    
+    // La integral definida es el valor acumulado final (sin contar la constante y0 inicial)
+    int_def = int_indef[n - 1] - y0; 
+    
+    // Se pide que la integral definida devuelva también y0 + Int_def según tu MATLAB
+    int_def = int_def + y0;
+    
+    return int_indef;
+}
+
+// Newton-Cotes cerrada n=1: Regla Trapezoidal simple
+// Descripción: I = h/2*(f(a)+f(b)) con h = b-a. Error = -h^3/12*f''(xi). Exacta para polinomios de grado 1.
+
+double nc_trapecio(double (*f)(double), double a, double b) {
+    /*
+    Ejemplo de uso:
+        double mi_func(double x) { return x*x*x - 2*x*x + 7*x - 5; }
+        double I = nc_trapecio(mi_func, 1.0, 3.0);   // 26 (exacto: 20.6667)
+    */
+    return (b - a) / 2.0 * (f(a) + f(b));
+}
+
+// Newton-Cotes cerrada n=2: Regla de 1/3 de Simpson simple
+// Descripción: I = h/3*(f(x0)+4f(x1)+f(x2)) con h = (b-a)/2. Error = -h^5/90*f''''(xi). Exacta para polinomios de grado <= 3.
+
+double nc_simpson13(double (*f)(double), double a, double b) {
+    /*
+    Ejemplo de uso:
+        double I = nc_simpson13(mi_func, 1.0, 3.0);   // 20.6667 (exacto)
+    */
+    double h = (b - a) / 2.0;
+    return h / 3.0 * (f(a) + 4.0 * f(a + h) + f(b));
+}
+
+// Newton-Cotes cerrada n=3: Regla de 3/8 de Simpson simple
+// Descripción: I = 3h/8*(f(x0)+3f(x1)+3f(x2)+f(x3)) con h = (b-a)/3. Error = -3h^5/80*f''''(xi). Exacta para polinomios de grado <= 3.
+
+double nc_simpson38(double (*f)(double), double a, double b) {
+    /*
+    Ejemplo de uso:
+        double I = nc_simpson38(mi_func, 1.0, 3.0);   // 20.6667 (exacto)
+    */
+    double h = (b - a) / 3.0;
+    return 3.0 * h / 8.0 * (f(a) + 3.0 * f(a + h) + 3.0 * f(a + 2.0 * h) + f(b));
+}
+
+// Regla Trapezoidal compuesta (con función)
+// Descripción: Divide [a,b] en 'n' subintervalos y suma trapecios: h*(f0/2 + f1 + ... + f(n-1) + fn/2). Error global O(h^2).
+
+double trapecio_comp_func(double (*f)(double), double a, double b, int n) {
+    /*
+    Ejemplo de uso:
+        double I = trapecio_comp_func(mi_func, 1.0, 3.0, 100);
+    */
+    if (n < 1) { print_error_int("trapecio_comp_func: n debe ser >= 1", n); return MC_NAN; }
+    double h = (b - a) / n;
+    double suma = 0.5 * (f(a) + f(b));
+    for (int i = 1; i < n; i++) suma += f(a + i * h);
+    return h * suma;
+}
+
+// Regla de 3/8 de Simpson compuesta (con función)
+// Descripción: Aplica Simpson 3/8 en grupos de 3 subintervalos (n debe ser multiplo de 3; si no lo es se sube al siguiente multiplo). Error global O(h^4).
+
+double simpson38_comp_func(double (*f)(double), double a, double b, int n) {
+    /*
+    Ejemplo de uso:
+        double I = simpson38_comp_func(mi_func, 0.0, 1.0, 99);
+    */
+    if (n < 3) n = 3;
+    if (n % 3 != 0) n += 3 - (n % 3);
+    double h = (b - a) / n;
+    double suma = f(a) + f(b);
+    for (int i = 1; i < n; i++) suma += ((i % 3 == 0) ? 2.0 : 3.0) * f(a + i * h);
+    return 3.0 * h / 8.0 * suma;
+}
+
+// Regla Trapezoidal compuesta (datos tabulados equiespaciados)
+// Descripción: Integra los valores y[0..n_puntos-1] separados una distancia 'h'. (Para espaciado no uniforme usar int_vect).
+
+double trapecio_comp_vect(double *y, int n_puntos, double h) {
+    /*
+    Ejemplo de uso:
+        double I = trapecio_comp_vect(y, 10, 0.2);   // 9 subintervalos de h = 0.2
+    */
+    if (n_puntos < 2) { print_error_int("trapecio_comp_vect: se necesitan al menos 2 puntos", n_puntos); return MC_NAN; }
+    double suma = 0.5 * (y[0] + y[n_puntos - 1]);
+    for (int i = 1; i < n_puntos - 1; i++) suma += y[i];
+    return h * suma;
+}
+
+// Regla de 1/3 de Simpson compuesta (datos tabulados equiespaciados)
+// Descripción: Necesita un numero PAR de subintervalos (n_puntos impar). Si es impar, se usa la regla trapezoidal en el ultimo subintervalo y Simpson en el resto.
+
+double simpson13_comp_vect(double *y, int n_puntos, double h) {
+    /*
+    Ejemplo de uso:
+        double I = simpson13_comp_vect(y, 11, 0.1);   // 10 subintervalos
+    */
+    if (n_puntos < 2) { print_error_int("simpson13_comp_vect: se necesitan al menos 2 puntos", n_puntos); return MC_NAN; }
+    int m = n_puntos - 1;                 // numero de subintervalos
+    int ms = m - (m % 2);                 // subintervalos tratados con Simpson
+    double res = 0.0;
+    if (ms > 0) {
+        double suma = y[0] + y[ms];
+        for (int i = 1; i < ms; i++) suma += ((i % 2 == 0) ? 2.0 : 4.0) * y[i];
+        res = h / 3.0 * suma;
+    }
+    if (m % 2 == 1) res += h * (y[m - 1] + y[m]) / 2.0;
+    return res;
+}
+
+// Regla de 3/8 de Simpson compuesta (datos tabulados equiespaciados)
+// Descripción: Necesita que el numero de subintervalos (n_puntos-1) sea multiplo de 3.
+
+double simpson38_comp_vect(double *y, int n_puntos, double h) {
+    /*
+    Ejemplo de uso:
+        double I = simpson38_comp_vect(y, 10, 0.1);   // 9 subintervalos
+    */
+    int m = n_puntos - 1;
+    if (m < 3 || m % 3 != 0) { print_error_int("simpson38_comp_vect: n_puntos-1 debe ser multiplo de 3", m); return MC_NAN; }
+    double suma = y[0] + y[m];
+    for (int i = 1; i < m; i++) suma += ((i % 3 == 0) ? 2.0 : 3.0) * y[i];
+    return 3.0 * h / 8.0 * suma;
+}
+
+// Extrapolación de Richardson para integrales
+// Descripción: Combina dos estimaciones I_n1 e I_n2 (con n1 y n2 subintervalos) en una mejorada: I* = I_n1 + (I_n2 - I_n1)/(1 - (n1/n2)^p).
+// p = 2 para la regla trapezoidal y p = 4 para Simpson. Con n2 = 2*n1 equivale a (4*I_n2 - I_n1)/3 (trapecio) o (16*I_n2 - I_n1)/15 (Simpson).
+
+double richardson_int(double I_n1, double I_n2, double n1, double n2, double p) {
+    /*
+    Ejemplo de uso:
+        // Trapecio con n1 = 2 (I = 22) y n2 = 4 (I = 21) para x^3-2x^2+7x-5 en [1,3]
+        double I = richardson_int(22.0, 21.0, 2, 4, 2);   // 20.6667 (exacto)
+    */
+    return I_n1 + (I_n2 - I_n1) / (1.0 - pow(n1 / n2, p));
+}
+
+// Tabla de Romberg
+// Descripción: Devuelve la matriz T[(N+1)x(N+1)] triangular inferior. T[i][0] es la regla trapezoidal con 2^i subintervalos y
+// T[i][j] = (4^j*T[i][j-1] - T[i-1][j-1])/(4^j - 1) la j-esima extrapolacion de Richardson. Liberar con del_mat(T, N+1).
+
+double** romberg_mat(double (*f)(double), double a, double b, int N) {
+    /*
+    Ejemplo de uso:
+        double f_inv(double x) { return 1.0 / x; }
+        double **T = romberg_mat(f_inv, 1.0, 137.2, 6);
+        print_mat(T, 7, 7, "Romberg");   // ln(137.2) = 4.92144
+    */
+    if (N < 0) { print_error_int("romberg_mat: N debe ser >= 0", N); return NULL; }
+    double **T = zeros_mat(N + 1, N + 1);
+    T[0][0] = (b - a) / 2.0 * (f(a) + f(b));
+    for (int i = 1; i <= N; i++) {
+        int npan = 1 << (i - 1);                 // nuevos puntos (puntos medios)
+        double h = (b - a) / (2.0 * npan);
+        double suma = 0.0;
+        for (int k = 1; k <= npan; k++) suma += f(a + (2 * k - 1) * h);
+        T[i][0] = 0.5 * T[i - 1][0] + h * suma;
+        double p4 = 1.0;
+        for (int j = 1; j <= i; j++) {
+            p4 *= 4.0;
+            T[i][j] = (p4 * T[i][j - 1] - T[i - 1][j - 1]) / (p4 - 1.0);
+        }
+    }
+    return T;
+}
+
+// Integración de Romberg con criterio de parada
+// Descripción: Aumenta N hasta que dos valores consecutivos de la ultima fila de la tabla difieran menos que 'tol'. N_out devuelve el N usado.
+
+double romberg_int(double (*f)(double), double a, double b, double tol, int N_max, int &N_out) {
+    /*
+    Ejemplo de uso:
+        int N;
+        double I = romberg_int(f_inv, 1.0, 137.2, 1e-8, 15, N);   // 4.92144
+    */
+    double **T = romberg_mat(f, a, b, N_max);
+    if (T == NULL) return MC_NAN;
+    double res = T[0][0];
+    N_out = 0;
+    for (int i = 1; i <= N_max; i++) {
+        res = T[i][i];
+        N_out = i;
+        if (fabs(T[i][i] - T[i][i - 1]) < tol) break;
+    }
+    if (N_out == N_max && fabs(T[N_max][N_max] - T[N_max][N_max - 1]) >= tol)
+        print_warning("romberg_int alcanzo N_max sin cumplir la tolerancia.");
+    del_mat(T, N_max + 1);
+    return res;
+}
+
+// Nodos y pesos de la cuadratura de Gauss-Legendre
+// Descripción: Calcula los 'n' nodos x (raices del polinomio de Legendre de grado n, en [-1,1]) y sus pesos w. Exacta para polinomios de grado <= 2n-1.
+// x y w se devuelven por referencia (new[]).
+
+void gauss_legendre_nodos(int n, double *&x, double *&w) {
+    /*
+    Ejemplo de uso:
+        double *x, *w;
+        gauss_legendre_nodos(3, x, w);   // x = {-0.7746, 0, 0.7746}, w = {5/9, 8/9, 5/9}
+    */
+    x = new double[n];
+    w = new double[n];
+    double pi = acos(-1.0);
+    for (int i = 0; i < (n + 1) / 2; i++) {
+        double z = cos(pi * (i + 0.75) / (n + 0.5)), pp = 1.0;
+        for (int it = 0; it < 100; it++) {
+            double p1 = 1.0, p2 = 0.0;
+            for (int j = 1; j <= n; j++) {          // recurrencia de Legendre
+                double p3 = p2;
+                p2 = p1;
+                p1 = ((2.0 * j - 1.0) * z * p2 - (j - 1.0) * p3) / j;
+            }
+            pp = n * (z * p1 - p2) / (z * z - 1.0);  // derivada P_n'(z)
+            double z1 = z;
+            z = z1 - p1 / pp;
+            if (fabs(z - z1) < 1e-15) break;
+        }
+        x[i] = -z;
+        x[n - 1 - i] = z;
+        w[i] = 2.0 / ((1.0 - z * z) * pp * pp);
+        w[n - 1 - i] = w[i];
+    }
+}
+
+// Cuadratura gaussiana (Gauss-Legendre) de una función en [a,b]
+// Descripción: Cambio de variable z = ((b-a)*x + b + a)/2 y suma ponderada de 'n' evaluaciones. Muy precisa con pocas evaluaciones si f es suave.
+
+double gauss_legendre_func(double (*f)(double), double a, double b, int n) {
+    /*
+    Ejemplo de uso:
+        double I = gauss_legendre_func(sin, 0.0, PI(15)/2, 2);   // 0.99847 (exacto: 1)
+    */
+    if (n < 1) { print_error_int("gauss_legendre_func: n debe ser >= 1", n); return MC_NAN; }
+    double *x, *w;
+    gauss_legendre_nodos(n, x, w);
+    double mitad = (b - a) / 2.0, centro = (b + a) / 2.0, suma = 0.0;
+    for (int i = 0; i < n; i++) suma += w[i] * f(mitad * x[i] + centro);
+    delete[] x; delete[] w;
+    return mitad * suma;
+}
+
+// Pesos de Newton-Cotes compuestas
+// Descripción: Devuelve los n+1 pesos para 'n' subintervalos de longitud h. regla = 1 (trapecio), 2 (Simpson 1/3, n par) o 3 (Simpson 3/8, n multiplo de 3).
+// Sirve para escribir una integral como suma ponderada sum(w_i*f(x_i)) y extenderla a integrales multiples.
+
+double* pesos_nc(int n, int regla, double h) {
+    /*
+    Ejemplo de uso:
+        double *w = pesos_nc(4, 2, 0.5);   // h/3*{1,4,2,4,1}
+    */
+    if (n < 1) { print_error_int("pesos_nc: n debe ser >= 1", n); return NULL; }
+    if (regla == 2 && n % 2 != 0) { print_error_int("pesos_nc: Simpson 1/3 necesita n par", n); return NULL; }
+    if (regla == 3 && n % 3 != 0) { print_error_int("pesos_nc: Simpson 3/8 necesita n multiplo de 3", n); return NULL; }
+    if (regla < 1 || regla > 3) { print_error_int("pesos_nc: regla debe ser 1, 2 o 3", regla); return NULL; }
+    double *w = new double[n + 1];
+    for (int i = 0; i <= n; i++) {
+        bool extremo = (i == 0 || i == n);
+        if (regla == 1)      w[i] = (extremo ? 1.0 : 2.0) * h / 2.0;
+        else if (regla == 2) w[i] = (extremo ? 1.0 : ((i % 2 == 0) ? 2.0 : 4.0)) * h / 3.0;
+        else                 w[i] = (extremo ? 1.0 : ((i % 3 == 0) ? 2.0 : 3.0)) * 3.0 * h / 8.0;
+    }
+    return w;
+}
+
+// Integral doble de una función f(x,y) sobre [ax,bx] x [ay,by]
+// Descripción: Doble sumatoria sum_j sum_i wy[j]*wx[i]*f(x_i,y_j) con 'nx' y 'ny' subintervalos y la regla elegida en cada direccion (rx, ry = 1, 2 o 3 como en pesos_nc).
+
+double integral_doble_func(double (*f)(double, double), double ax, double bx, double ay, double by,
+                           int nx, int ny, int rx, int ry) {
+    /*
+    Ejemplo de uso:
+        double g(double x, double y) { return x * y; }
+        double I = integral_doble_func(g, 0, 2, 0, 3, 10, 10, 2, 2);   // 9
+    */
+    double hx = (bx - ax) / nx, hy = (by - ay) / ny;
+    double *wx = pesos_nc(nx, rx, hx);
+    double *wy = pesos_nc(ny, ry, hy);
+    if (wx == NULL || wy == NULL) { delete[] wx; delete[] wy; return MC_NAN; }
+    double suma = 0.0;
+    for (int j = 0; j <= ny; j++)
+        for (int i = 0; i <= nx; i++)
+            suma += wy[j] * wx[i] * f(ax + i * hx, ay + j * hy);
+    delete[] wx; delete[] wy;
+    return suma;
+}
+
+// Integral triple de una función f(x,y,z) sobre un paralelepipedo
+// Descripción: Triple sumatoria con pesos w_ijk = a_i*b_j*c_k (nx, ny, nz subintervalos; reglas rx, ry, rz = 1, 2 o 3).
+
+double integral_triple_func(double (*f)(double, double, double), double ax, double bx, double ay, double by,
+                            double az, double bz, int nx, int ny, int nz, int rx, int ry, int rz) {
+    /*
+    Ejemplo de uso:
+        double g(double x, double y, double z) { return x + y + z; }
+        double I = integral_triple_func(g, 0, 1, 0, 1, 0, 1, 4, 4, 4, 2, 2, 2);   // 1.5
+    */
+    double hx = (bx - ax) / nx, hy = (by - ay) / ny, hz = (bz - az) / nz;
+    double *wx = pesos_nc(nx, rx, hx);
+    double *wy = pesos_nc(ny, ry, hy);
+    double *wz = pesos_nc(nz, rz, hz);
+    if (wx == NULL || wy == NULL || wz == NULL) { delete[] wx; delete[] wy; delete[] wz; return MC_NAN; }
+    double suma = 0.0;
+    for (int k = 0; k <= nz; k++)
+        for (int j = 0; j <= ny; j++)
+            for (int i = 0; i <= nx; i++)
+                suma += wz[k] * wy[j] * wx[i] * f(ax + i * hx, ay + j * hy, az + k * hz);
+    delete[] wx; delete[] wy; delete[] wz;
+    return suma;
+}
+
+// Integral doble de datos tabulados f(x_i, y_j) en una malla equiespaciada
+// Descripción: F es una matriz (ny+1) x (nx+1) con F[j][i] = f(x_i, y_j). Aplica la regla rx en la direccion x y ry en la y (como el ejemplo de la teoria:
+// trapecio en x y Simpson 1/3 en y).
+
+double integral_doble_mat(double **F, int nx, int ny, double hx, double hy, int rx, int ry) {
+    /*
+    Ejemplo de uso:
+        double I = integral_doble_mat(F, 3, 4, 0.5, 0.1, 1, 2);   // 4 puntos en x (trapecio) y 5 en y (Simpson 1/3)
+    */
+    double *wx = pesos_nc(nx, rx, hx);
+    double *wy = pesos_nc(ny, ry, hy);
+    if (wx == NULL || wy == NULL) { delete[] wx; delete[] wy; return MC_NAN; }
+    double suma = 0.0;
+    for (int j = 0; j <= ny; j++)
+        for (int i = 0; i <= nx; i++)
+            suma += wy[j] * wx[i] * F[j][i];
+    delete[] wx; delete[] wy;
+    return suma;
+}
+
+// Integral doble por cuadratura gaussiana
+// Descripción: Usa 'nx' nodos de Gauss-Legendre en x y 'ny' en y (cada direccion puede tener un numero distinto de terminos).
+
+double gauss_doble_func(double (*f)(double, double), double ax, double bx, double ay, double by, int nx, int ny) {
+    /*
+    Ejemplo de uso:
+        double I = gauss_doble_func(g, 0, 2, 0, 3, 3, 3);   // 9
+    */
+    double *xn, *wx, *yn, *wy;
+    gauss_legendre_nodos(nx, xn, wx);
+    gauss_legendre_nodos(ny, yn, wy);
+    double mx = (bx - ax) / 2.0, cx = (bx + ax) / 2.0, my = (by - ay) / 2.0, cy = (by + ay) / 2.0;
+    double suma = 0.0;
+    for (int j = 0; j < ny; j++)
+        for (int i = 0; i < nx; i++)
+            suma += wy[j] * wx[i] * f(mx * xn[i] + cx, my * yn[j] + cy);
+    delete[] xn; delete[] wx; delete[] yn; delete[] wy;
+    return mx * my * suma;
+}
+
+// Integral triple por cuadratura gaussiana
+// Descripción: Usa nx, ny y nz nodos de Gauss-Legendre en cada direccion (ejemplo de la teoria: 3 terminos en x y 2 en y, z).
+
+double gauss_triple_func(double (*f)(double, double, double), double ax, double bx, double ay, double by,
+                         double az, double bz, int nx, int ny, int nz) {
+    /*
+    Ejemplo de uso:
+        double I = gauss_triple_func(g3, 0, 1, 0, 1, 0, 1, 2, 2, 2);
+    */
+    double *xn, *wx, *yn, *wy, *zn, *wz;
+    gauss_legendre_nodos(nx, xn, wx);
+    gauss_legendre_nodos(ny, yn, wy);
+    gauss_legendre_nodos(nz, zn, wz);
+    double mx = (bx - ax) / 2.0, cx = (bx + ax) / 2.0;
+    double my = (by - ay) / 2.0, cy = (by + ay) / 2.0;
+    double mz = (bz - az) / 2.0, cz = (bz + az) / 2.0;
+    double suma = 0.0;
+    for (int k = 0; k < nz; k++)
+        for (int j = 0; j < ny; j++)
+            for (int i = 0; i < nx; i++)
+                suma += wz[k] * wy[j] * wx[i] * f(mx * xn[i] + cx, my * yn[j] + cy, mz * zn[k] + cz);
+    delete[] xn; delete[] wx; delete[] yn; delete[] wy; delete[] zn; delete[] wz;
+    return mx * my * mz * suma;
+}
+
