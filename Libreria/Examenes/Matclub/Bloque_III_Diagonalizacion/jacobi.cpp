@@ -2,14 +2,14 @@
 // MATCLUB-CPP  |  BLOQUE III: DIAGONALIZACION  |  III.2
 // Diagonalizacion de matrices simetricas: Metodo de Jacobi
 // ============================================================================
-// Rotaciones de Jacobi para obtener autovalores y autovectores de matrices simetricas, y ordenacion de los resultados.
+// Rotaciones de Jacobi para obtener autovalores y autovectores de matrices simetricas (a eleccion: autovalores, autovectores o ambos) y ordenacion de los resultados.
 //
 // ARCHIVO INDEPENDIENTE: no necesita ningun otro archivo de MATCLUB.
 // Uso:  #include "jacobi.cpp"   (con la ruta donde lo tengas)
 // Se pueden incluir varios modulos a la vez: cada funcion esta protegida
 // contra duplicados (#ifndef MC_FN_<nombre>).
 //
-// Funciones propias (2): jacobi_eig, sort_eig
+// Funciones propias (2): sort_eig, jacobi_eig
 // Dependencias copiadas (9): print_error, print_warning, intercambiar_elem, gen_mat, del_mat, coppy_mat, eye_mat, is_symmetric_mat, get_diag_mat
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
@@ -163,28 +163,61 @@ double* get_diag_mat(double **A, int n) {
 // FUNCIONES DEL MODULO: Diagonalizacion de matrices simetricas: Metodo de Jacobi
 // ----------------------------------------------------------------------------
 
+#ifndef MC_FN_sort_eig
+#define MC_FN_sort_eig
+// Ordenar autovalores y autovectores
+// Descripción: Ordena L en valor absoluto decreciente (como en la teoria: l1 = 4, l2 = -3, l3 = 2) y permuta las columnas de U en consecuencia.
+// U puede ser NULL (si solo hay autovalores).
+void sort_eig(double *L, double **U, int n) {
+    /*
+    Ejemplo de uso:
+        sort_eig(L, U, n);      // autovalores y autovectores
+        sort_eig(L, NULL, n);   // solo autovalores
+    */
+    for (int i = 0; i < n - 1; i++) {
+        int m = i;
+        for (int j = i + 1; j < n; j++) if (fabs(L[j]) > fabs(L[m])) m = j;
+        if (m != i) {
+            intercambiar_elem(L[i], L[m]);
+            if (U != NULL)
+                for (int k = 0; k < n; k++) intercambiar_elem(U[k][i], U[k][m]);
+        }
+    }
+}
+#endif // MC_FN_sort_eig
+
 #ifndef MC_FN_jacobi_eig
 #define MC_FN_jacobi_eig
 // Diagonalización de una matriz simétrica: Método de Jacobi
 // Descripción: Aplica rotaciones planas R_ij(theta) que anulan en cada paso el mayor elemento fuera de la diagonal (ecs. [7] y [8] de la teoria)
-// hasta que todos sean menores que 'tol'. Devuelve la matriz U (new[]) cuyas COLUMNAS son los autovectores; los autovalores se devuelven en L (new[]).
-// 'n_rot' devuelve el numero de rotaciones realizadas. La matriz A no se modifica.
-double** jacobi_eig(double **A, int n, double *&L, double tol, int max_iter, int &n_rot) {
+// hasta que todos sean menores que 'tol'. TU ELIGES que quieres obtener:
+//   calc_autoval -> L = array con los autovalores (new[]). Si es false, L = NULL.
+//   calc_autovec -> U = matriz n x n cuyas COLUMNAS son los autovectores (new[]). Si es false, U = NULL y no se calcula (ahorra trabajo).
+//   ordenar      -> ordena por |autovalor| decreciente (los autovectores se reordenan con ellos).
+// Devuelve el numero de rotaciones realizadas, o -1 si la matriz no es simetrica. La matriz A no se modifica.
+int jacobi_eig(double **A, int n, double *&L, double **&U, bool calc_autoval, bool calc_autovec, bool ordenar, double tol, int max_iter) {
     /*
     Ejemplo de uso:
-        double *L; int rot;
-        double **U = jacobi_eig(A, n, L, 1e-10, 1000, rot);   // U' * A * U = diag(L)
+        double *L; double **U;
+        jacobi_eig(A, n, L, U, true, true, true, 1e-10, 1000);    // autovalores y autovectores, ordenados
+        jacobi_eig(A, n, L, U, true, false, false, 1e-10, 1000);  // solo autovalores (U = NULL)
+        jacobi_eig(A, n, L, U, false, true, false, 1e-10, 1000);  // solo autovectores (L = NULL)
         print_vect(L, n, "Autovalores");
         print_mat(U, n, n, "Autovectores (columnas)");
     */
-    n_rot = 0;
+    L = NULL;
+    U = NULL;
+    if (!calc_autoval && !calc_autovec) {
+        print_warning("jacobi_eig: no se pidieron ni autovalores ni autovectores, no hay nada que calcular.");
+        return 0;
+    }
     if (!is_symmetric_mat(A, n, 1e-10)) {
         print_error("jacobi_eig: la matriz debe ser simetrica");
-        L = NULL;
-        return NULL;
+        return -1;
     }
     double **B = coppy_mat(A, n, n);
-    double **U = eye_mat(n);
+    double **V = calc_autovec ? eye_mat(n) : NULL;
+    int n_rot = 0;
 
     while (n > 1) {
         // Paso 3: maximo (en valor absoluto) por encima de la diagonal
@@ -202,11 +235,13 @@ double** jacobi_eig(double **A, int n, double *&L, double tol, int max_iter, int
         else theta = 0.5 * atan(2.0 * B[i][j] / (B[i][i] - B[j][j]));
         double si = sin(theta), co = cos(theta);
 
-        // Paso 5: U = U*R (sin construir R)
-        for (int k = 0; k < n; k++) {
-            double uki = U[k][i];
-            U[k][i] = uki * co + U[k][j] * si;
-            U[k][j] = -uki * si + U[k][j] * co;
+        // Paso 5: V = V*R (sin construir R), solo si se piden los autovectores
+        if (V != NULL) {
+            for (int k = 0; k < n; k++) {
+                double vki = V[k][i];
+                V[k][i] = vki * co + V[k][j] * si;
+                V[k][j] = -vki * si + V[k][j] * co;
+            }
         }
         // Paso 6: B = R^T * B * R (ecs. [7b] a [7e])
         for (int k = 0; k < n; k++) {
@@ -225,30 +260,13 @@ double** jacobi_eig(double **A, int n, double *&L, double tol, int max_iter, int
         B[j][i] = 0.0;
         n_rot++;
     }
-    L = get_diag_mat(B, n);
+    double *Ld = get_diag_mat(B, n);
     del_mat(B, n);
-    return U;
+    if (ordenar) sort_eig(Ld, V, n);
+    U = V;
+    if (calc_autoval) L = Ld; else delete[] Ld;
+    return n_rot;
 }
 #endif // MC_FN_jacobi_eig
-
-#ifndef MC_FN_sort_eig
-#define MC_FN_sort_eig
-// Ordenar autovalores y autovectores
-// Descripción: Ordena L en valor absoluto decreciente (como en la teoria: l1 = 4, l2 = -3, l3 = 2) y permuta las columnas de U en consecuencia.
-void sort_eig(double *L, double **U, int n) {
-    /*
-    Ejemplo de uso:
-        sort_eig(L, U, n);   // tras jacobi_eig
-    */
-    for (int i = 0; i < n - 1; i++) {
-        int m = i;
-        for (int j = i + 1; j < n; j++) if (fabs(L[j]) > fabs(L[m])) m = j;
-        if (m != i) {
-            intercambiar_elem(L[i], L[m]);
-            for (int k = 0; k < n; k++) intercambiar_elem(U[k][i], U[k][m]);
-        }
-    }
-}
-#endif // MC_FN_sort_eig
 
 #endif // MATCLUB_JACOBI_CPP

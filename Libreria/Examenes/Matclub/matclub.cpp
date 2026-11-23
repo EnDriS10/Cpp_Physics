@@ -4063,26 +4063,56 @@ double potencia_inv_eig(double **A, int n, double mu, double *&v_out, double tol
 // III.2 DIAGONALIZACION DE MATRICES SIMETRICAS: METODO DE JACOBI
 // ----------------------------------------------------------------------------
 
-// Diagonalización de una matriz simétrica: Método de Jacobi
-// Descripción: Aplica rotaciones planas R_ij(theta) que anulan en cada paso el mayor elemento fuera de la diagonal (ecs. [7] y [8] de la teoria)
-// hasta que todos sean menores que 'tol'. Devuelve la matriz U (new[]) cuyas COLUMNAS son los autovectores; los autovalores se devuelven en L (new[]).
-// 'n_rot' devuelve el numero de rotaciones realizadas. La matriz A no se modifica.
-double** jacobi_eig(double **A, int n, double *&L, double tol, int max_iter, int &n_rot) {
+// Ordenar autovalores y autovectores
+// Descripción: Ordena L en valor absoluto decreciente (como en la teoria: l1 = 4, l2 = -3, l3 = 2) y permuta las columnas de U en consecuencia.
+// U puede ser NULL (si solo hay autovalores).
+void sort_eig(double *L, double **U, int n) {
     /*
     Ejemplo de uso:
-        double *L; int rot;
-        double **U = jacobi_eig(A, n, L, 1e-10, 1000, rot);   // U' * A * U = diag(L)
+        sort_eig(L, U, n);      // autovalores y autovectores
+        sort_eig(L, NULL, n);   // solo autovalores
+    */
+    for (int i = 0; i < n - 1; i++) {
+        int m = i;
+        for (int j = i + 1; j < n; j++) if (fabs(L[j]) > fabs(L[m])) m = j;
+        if (m != i) {
+            intercambiar_elem(L[i], L[m]);
+            if (U != NULL)
+                for (int k = 0; k < n; k++) intercambiar_elem(U[k][i], U[k][m]);
+        }
+    }
+}
+
+// Diagonalización de una matriz simétrica: Método de Jacobi
+// Descripción: Aplica rotaciones planas R_ij(theta) que anulan en cada paso el mayor elemento fuera de la diagonal (ecs. [7] y [8] de la teoria)
+// hasta que todos sean menores que 'tol'. TU ELIGES que quieres obtener:
+//   calc_autoval -> L = array con los autovalores (new[]). Si es false, L = NULL.
+//   calc_autovec -> U = matriz n x n cuyas COLUMNAS son los autovectores (new[]). Si es false, U = NULL y no se calcula (ahorra trabajo).
+//   ordenar      -> ordena por |autovalor| decreciente (los autovectores se reordenan con ellos).
+// Devuelve el numero de rotaciones realizadas, o -1 si la matriz no es simetrica. La matriz A no se modifica.
+int jacobi_eig(double **A, int n, double *&L, double **&U, bool calc_autoval, bool calc_autovec, bool ordenar, double tol, int max_iter) {
+    /*
+    Ejemplo de uso:
+        double *L; double **U;
+        jacobi_eig(A, n, L, U, true, true, true, 1e-10, 1000);    // autovalores y autovectores, ordenados
+        jacobi_eig(A, n, L, U, true, false, false, 1e-10, 1000);  // solo autovalores (U = NULL)
+        jacobi_eig(A, n, L, U, false, true, false, 1e-10, 1000);  // solo autovectores (L = NULL)
         print_vect(L, n, "Autovalores");
         print_mat(U, n, n, "Autovectores (columnas)");
     */
-    n_rot = 0;
+    L = NULL;
+    U = NULL;
+    if (!calc_autoval && !calc_autovec) {
+        print_warning("jacobi_eig: no se pidieron ni autovalores ni autovectores, no hay nada que calcular.");
+        return 0;
+    }
     if (!is_symmetric_mat(A, n, 1e-10)) {
         print_error("jacobi_eig: la matriz debe ser simetrica");
-        L = NULL;
-        return NULL;
+        return -1;
     }
     double **B = coppy_mat(A, n, n);
-    double **U = eye_mat(n);
+    double **V = calc_autovec ? eye_mat(n) : NULL;
+    int n_rot = 0;
 
     while (n > 1) {
         // Paso 3: maximo (en valor absoluto) por encima de la diagonal
@@ -4100,11 +4130,13 @@ double** jacobi_eig(double **A, int n, double *&L, double tol, int max_iter, int
         else theta = 0.5 * atan(2.0 * B[i][j] / (B[i][i] - B[j][j]));
         double si = sin(theta), co = cos(theta);
 
-        // Paso 5: U = U*R (sin construir R)
-        for (int k = 0; k < n; k++) {
-            double uki = U[k][i];
-            U[k][i] = uki * co + U[k][j] * si;
-            U[k][j] = -uki * si + U[k][j] * co;
+        // Paso 5: V = V*R (sin construir R), solo si se piden los autovectores
+        if (V != NULL) {
+            for (int k = 0; k < n; k++) {
+                double vki = V[k][i];
+                V[k][i] = vki * co + V[k][j] * si;
+                V[k][j] = -vki * si + V[k][j] * co;
+            }
         }
         // Paso 6: B = R^T * B * R (ecs. [7b] a [7e])
         for (int k = 0; k < n; k++) {
@@ -4123,26 +4155,12 @@ double** jacobi_eig(double **A, int n, double *&L, double tol, int max_iter, int
         B[j][i] = 0.0;
         n_rot++;
     }
-    L = get_diag_mat(B, n);
+    double *Ld = get_diag_mat(B, n);
     del_mat(B, n);
-    return U;
-}
-
-// Ordenar autovalores y autovectores
-// Descripción: Ordena L en valor absoluto decreciente (como en la teoria: l1 = 4, l2 = -3, l3 = 2) y permuta las columnas de U en consecuencia.
-void sort_eig(double *L, double **U, int n) {
-    /*
-    Ejemplo de uso:
-        sort_eig(L, U, n);   // tras jacobi_eig
-    */
-    for (int i = 0; i < n - 1; i++) {
-        int m = i;
-        for (int j = i + 1; j < n; j++) if (fabs(L[j]) > fabs(L[m])) m = j;
-        if (m != i) {
-            intercambiar_elem(L[i], L[m]);
-            for (int k = 0; k < n; k++) intercambiar_elem(U[k][i], U[k][m]);
-        }
-    }
+    if (ordenar) sort_eig(Ld, V, n);
+    U = V;
+    if (calc_autoval) L = Ld; else delete[] Ld;
+    return n_rot;
 }
 
 // ----------------------------------------------------------------------------
@@ -4151,14 +4169,19 @@ void sort_eig(double *L, double **U, int n) {
 
 // Forma de Hessenberg superior por transformaciones de similaridad (eliminacion)
 // Descripción: Hace cero los elementos por debajo de la subdiagonal con B^-1*A*B (multiplicadores b_i = a_i,m-1 / a_m,m-1, como en la teoria).
-// Si el elemento subdiagonal es cero se intercambian fila y columna con el de mayor magnitud (asi no cambian los autovalores). Devuelve una matriz nueva.
-double** hessenberg_mat(double **A, int n) {
+// Si el elemento subdiagonal es cero se intercambian fila y columna con el de mayor magnitud (asi no cambian los autovalores). Devuelve H (new[]).
+// Si calc_P es true, P (new[]) es la matriz de transformacion con H = P^-1*A*P (NO es ortogonal): si w es autovector de H, entonces P*w lo es de A.
+// Si calc_P es false, P = NULL.
+double** hessenberg_mat(double **A, int n, double **&P, bool calc_P) {
     /*
     Ejemplo de uso:
         // A = [7 8 6 6; 1 6 -1 -2; 1 -2 5 -2; 3 4 3 4]
-        double **H = hessenberg_mat(A, 4);   // H = [7 32 -60 6; 1 -1 21 -2; 0 -2 6 0; 0 0 -38 10]
+        double **P;
+        double **H = hessenberg_mat(A, 4, P, true);    // H = [7 32 -60 6; 1 -1 21 -2; 0 -2 6 0; 0 0 -38 10]
+        double **H2 = hessenberg_mat(A, 4, P, false);  // solo H (P = NULL)
     */
     double **H = coppy_mat(A, n, n);
+    P = calc_P ? eye_mat(n) : NULL;
     for (int m = 1; m < n - 1; m++) {
         if (H[m][m - 1] == 0.0) {                       // buscar pivote
             int p = m;
@@ -4167,6 +4190,8 @@ double** hessenberg_mat(double **A, int n) {
             if (p != m) {
                 for (int j = 0; j < n; j++) intercambiar_elem(H[p][j], H[m][j]);   // filas
                 for (int j = 0; j < n; j++) intercambiar_elem(H[j][p], H[j][m]);   // columnas
+                if (P != NULL)
+                    for (int j = 0; j < n; j++) intercambiar_elem(P[j][p], P[j][m]);
             }
         }
         double piv = H[m][m - 1];
@@ -4176,6 +4201,8 @@ double** hessenberg_mat(double **A, int n) {
             if (b != 0.0) {
                 for (int j = 0; j < n; j++) H[i][j] -= b * H[m][j];   // B^-1 * H : fila i -= b*fila m
                 for (int j = 0; j < n; j++) H[j][m] += b * H[j][i];   // (.) * B  : columna m += b*columna i
+                if (P != NULL)
+                    for (int j = 0; j < n; j++) P[j][m] += b * P[j][i];   // P = P*B
             }
             H[i][m - 1] = 0.0;
         }
@@ -4185,13 +4212,17 @@ double** hessenberg_mat(double **A, int n) {
 
 // Forma de Hessenberg superior por reflexiones de Householder
 // Descripción: Igual que hessenberg_mat pero con reflexiones P = I - 2*v*v^T/(v^T*v) (transformaciones ortogonales, mas estables numericamente).
-// Mantiene los autovalores (P es ortogonal y simetrica: H = P*A*P). Si A es simetrica el resultado es tridiagonal.
-double** hessenberg_householder_mat(double **A, int n) {
+// Devuelve H (new[]). Si A es simetrica, H es tridiagonal. Si calc_Q es true, Q (new[]) es ortogonal con H = Q^T*A*Q:
+// si w es autovector de H, entonces Q*w lo es de A. Si calc_Q es false, Q = NULL.
+double** hessenberg_householder_mat(double **A, int n, double **&Q, bool calc_Q) {
     /*
     Ejemplo de uso:
-        double **H = hessenberg_householder_mat(A, n);
+        double **Q;
+        double **H = hessenberg_householder_mat(A, n, Q, true);    // H = Q^T*A*Q
+        double **H2 = hessenberg_householder_mat(A, n, Q, false);  // solo H (Q = NULL)
     */
     double **H = coppy_mat(A, n, n);
+    Q = calc_Q ? eye_mat(n) : NULL;
     double *v = new double[n];
     for (int k = 0; k < n - 2; k++) {
         double norma = 0.0;
@@ -4214,6 +4245,13 @@ double** hessenberg_householder_mat(double **A, int n) {
             double s = 0.0;
             for (int j = k + 1; j < n; j++) s += H[i][j] * v[j];
             for (int j = k + 1; j < n; j++) H[i][j] -= 2.0 * s * v[j] / vv;
+        }
+        if (Q != NULL) {                                   // Q = Q*P
+            for (int i = 0; i < n; i++) {
+                double s = 0.0;
+                for (int j = k + 1; j < n; j++) s += Q[i][j] * v[j];
+                for (int j = k + 1; j < n; j++) Q[i][j] -= 2.0 * s * v[j] / vv;
+            }
         }
         for (int i = k + 2; i < n; i++) H[i][k] = 0.0;
     }
@@ -4287,19 +4325,23 @@ void qr_givens_mat(double **A, int n, double **&Q, double **&R) {
     }
 }
 
-// Método QR: matriz triangular superior semejante a A
-// Descripción: Itera A(i) = Q(i)*R(i) -> A(i+1) = R(i)*Q(i) (misma traza y autovalores) hasta que la suma de |elementos bajo la diagonal| sea < tol.
-// Si 'usar_hess' es true se aplica antes la transformacion de Hessenberg (converge con menos trabajo por iteracion). Devuelve la matriz (new[]) e 'iter_out' iteraciones.
-// Con autovalores complejos no converge a triangular (quedan bloques 2x2).
-double** qr_triang_mat(double **A, int n, double tol, int max_iter, bool usar_hess, int &iter_out) {
+// Método QR: forma triangular (de Schur) y matriz de transformacion
+// Descripción: Itera A(i) = Q(i)*R(i) -> A(i+1) = R(i)*Q(i) (mismos autovalores) hasta que la suma de |elementos bajo la diagonal| sea < tol.
+// 'hess' elige la reduccion previa: 0 = ninguna, 1 = Hessenberg por Householder (ortogonal), 2 = Hessenberg por eliminacion (la de la teoria).
+// Devuelve la matriz triangular T (new[]) y el numero de iteraciones. Si calc_M es true, M (new[]) es la matriz acumulada de todas las
+// transformaciones con T = M^-1*A*M (ortogonal si hess = 0 o 1); si es false, M = NULL. Con autovalores complejos no converge a triangular.
+int qr_schur_mat(double **A, int n, double **&T, double **&M, bool calc_M, double tol, int max_iter, int hess) {
     /*
     Ejemplo de uso:
-        int it;
-        double **T = qr_triang_mat(A, n, 1e-12, 1000, true, it);   // diagonal de T = autovalores
+        double **T, **M;
+        int it = qr_schur_mat(A, n, T, M, true, 1e-12, 1000, 1);   // diagonal de T = autovalores
     */
-    double **T = usar_hess ? hessenberg_householder_mat(A, n) : coppy_mat(A, n, n);
-    iter_out = 0;
-    while (iter_out < max_iter) {
+    if (hess < 0 || hess > 2) { print_error_int("qr_schur_mat: hess debe ser 0, 1 o 2", hess); T = NULL; M = NULL; return -1; }
+    if (hess == 1)      T = hessenberg_householder_mat(A, n, M, calc_M);
+    else if (hess == 2) T = hessenberg_mat(A, n, M, calc_M);
+    else { T = coppy_mat(A, n, n); M = calc_M ? eye_mat(n) : NULL; }
+    int iter = 0;
+    while (iter < max_iter) {
         double bajo = 0.0;
         for (int i = 1; i < n; i++)
             for (int j = 0; j < i; j++) bajo += fabs(T[i][j]);
@@ -4308,27 +4350,114 @@ double** qr_triang_mat(double **A, int n, double tol, int max_iter, bool usar_he
         qr_givens_mat(T, n, Q, R);
         del_mat(T, n);
         T = prod_mat(R, Q, n, n, n, n);
+        if (M != NULL) {
+            double **Mn = prod_mat(M, Q, n, n, n, n);
+            del_mat(M, n);
+            M = Mn;
+        }
         del_mat(Q, n); del_mat(R, n);
-        iter_out++;
+        iter++;
     }
-    if (iter_out >= max_iter) print_warning("qr_triang_mat alcanzo max_iter (posibles autovalores complejos o poca convergencia).");
+    if (iter >= max_iter) print_warning("qr_schur_mat alcanzo max_iter (posibles autovalores complejos o poca convergencia).");
+    return iter;
+}
+
+// Método QR: matriz triangular superior semejante a A
+// Descripción: Version corta de qr_schur_mat: devuelve solo la matriz triangular T (new[]) y las iteraciones en 'iter_out'.
+// Si 'usar_hess' es true se aplica antes la reduccion de Hessenberg (Householder). Su diagonal son los autovalores.
+// Con autovalores complejos no converge a triangular (quedan bloques 2x2).
+double** qr_triang_mat(double **A, int n, double tol, int max_iter, bool usar_hess, int &iter_out) {
+    /*
+    Ejemplo de uso:
+        int it;
+        double **T = qr_triang_mat(A, n, 1e-12, 1000, true, it);   // diagonal de T = autovalores
+    */
+    double **T, **M;
+    iter_out = qr_schur_mat(A, n, T, M, false, tol, max_iter, usar_hess ? 1 : 0);
     return T;
 }
 
-// Autovalores de una matriz genérica: Método QR
-// Descripción: Devuelve (new[]) los autovalores de A, que son los elementos diagonales de la matriz triangular obtenida con qr_triang_mat.
-double* qr_eig(double **A, int n, double tol, int max_iter, bool usar_hess, int &iter_out) {
+// Autovalores y autovectores de una matriz generica: Método QR
+// Descripción: Obtiene la forma triangular T = M^-1*A*M con qr_schur_mat; los autovalores son su diagonal y los autovectores se calculan por
+// sustitucion regresiva sobre T (y se pasan a A multiplicando por M). TU ELIGES que quieres obtener:
+//   calc_autoval -> L = array con los autovalores (new[]). Si es false, L = NULL.
+//   calc_autovec -> U = matriz n x n cuyas COLUMNAS son los autovectores normalizados (new[]). Si es false, U = NULL y no se calcula.
+//   ordenar      -> ordena por |autovalor| decreciente (los autovectores se reordenan con ellos).
+//   hess         -> reduccion previa: 0 = ninguna, 1 = Hessenberg por Householder, 2 = Hessenberg por eliminacion (la de la teoria).
+// Devuelve el numero de iteraciones QR (o -1 si hess no es valido). Valido para matrices con autovalores reales.
+int qr_eig(double **A, int n, double *&L, double **&U, bool calc_autoval, bool calc_autovec, bool ordenar, double tol, int max_iter, int hess) {
     /*
     Ejemplo de uso:
         // A = [7 8 6 6; 1 6 -1 -2; 1 -2 5 -2; 3 4 3 4]  -> autovalores 10, 7, 4, 1
-        int it;
-        double *L = qr_eig(A, 4, 1e-12, 1000, true, it);
+        double *L; double **U;
+        int it = qr_eig(A, 4, L, U, true, true, true, 1e-12, 5000, 1);   // autovalores y autovectores
+        qr_eig(A, 4, L, U, true, false, false, 1e-12, 5000, 2);          // solo autovalores (con Hessenberg por eliminacion)
         print_vect(L, 4, "Autovalores");
     */
-    double **T = qr_triang_mat(A, n, tol, max_iter, usar_hess, iter_out);
-    double *L = get_diag_mat(T, n);
+    L = NULL;
+    U = NULL;
+    if (!calc_autoval && !calc_autovec) {
+        print_warning("qr_eig: no se pidieron ni autovalores ni autovectores, no hay nada que calcular.");
+        return 0;
+    }
+    double **T, **M;
+    int iter = qr_schur_mat(A, n, T, M, calc_autovec, tol, max_iter, hess);
+    if (iter < 0) return -1;
+    double *Ld = get_diag_mat(T, n);
+    double **V = NULL;
+    if (calc_autovec) {
+        // Autovectores de T (triangular superior): para cada k, w_k con w_k[k] = 1 y sustitucion regresiva
+        double normT = 0.0;
+        for (int i = 0; i < n; i++)
+            for (int j = i; j < n; j++) if (fabs(T[i][j]) > normT) normT = fabs(T[i][j]);
+        if (normT == 0.0) normT = 1.0;
+        double smin = 1e-12 * normT;                       // evita dividir por 0 con autovalores repetidos
+        double **W = zeros_mat(n, n);
+        for (int k = 0; k < n; k++) {
+            W[k][k] = 1.0;
+            for (int i = k - 1; i >= 0; i--) {
+                double s = 0.0;
+                for (int j = i + 1; j <= k; j++) s += T[i][j] * W[j][k];
+                double den = T[i][i] - T[k][k];
+                if (fabs(den) < smin) den = smin;
+                W[i][k] = -s / den;
+            }
+        }
+        V = prod_mat(M, W, n, n, n, n);                    // autovectores de A = M * W
+        for (int k = 0; k < n; k++) {                      // normalizar columnas
+            double nrm = 0.0;
+            for (int i = 0; i < n; i++) nrm += V[i][k] * V[i][k];
+            nrm = sqrt(nrm);
+            if (nrm > 0.0) for (int i = 0; i < n; i++) V[i][k] /= nrm;
+        }
+        del_mat(W, n);
+        del_mat(M, n);
+    }
     del_mat(T, n);
-    return L;
+    if (ordenar) sort_eig(Ld, V, n);
+    U = V;
+    if (calc_autoval) L = Ld; else delete[] Ld;
+    return iter;
+}
+
+// ----------------------------------------------------------------------------
+// INTERFAZ GENERAL: AUTOVALORES Y AUTOVECTORES DE CUALQUIER MATRIZ
+// ----------------------------------------------------------------------------
+
+// Autovalores y autovectores de cualquier matriz real (elige el metodo automaticamente)
+// Descripción: Si A es simetrica usa el metodo de Jacobi; si no, el metodo QR con reduccion de Householder a Hessenberg.
+// Mismas opciones que jacobi_eig y qr_eig: calc_autoval (array L de autovalores), calc_autovec (matriz U con los autovectores en las columnas)
+// y ordenar (por |autovalor| decreciente). Devuelve el numero de rotaciones (Jacobi) o de iteraciones (QR), o -1 si hay error.
+int eig_mat(double **A, int n, double *&L, double **&U, bool calc_autoval, bool calc_autovec, bool ordenar, double tol, int max_iter) {
+    /*
+    Ejemplo de uso:
+        double *L; double **U;
+        eig_mat(A, n, L, U, true, true, true, 1e-12, 5000);    // autovalores y autovectores
+        eig_mat(A, n, L, U, true, false, true, 1e-12, 5000);   // solo autovalores, ordenados
+    */
+    if (is_symmetric_mat(A, n, 1e-10))
+        return jacobi_eig(A, n, L, U, calc_autoval, calc_autovec, ordenar, tol, max_iter);
+    return qr_eig(A, n, L, U, calc_autoval, calc_autovec, ordenar, tol, max_iter, 1);
 }
 
 // ============================================================================
