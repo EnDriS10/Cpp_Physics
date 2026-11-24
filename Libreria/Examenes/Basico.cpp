@@ -11,6 +11,13 @@ double 		Números reales en doble precisión 	8 bytes
 #include <iomanip>
 cout << setprecision(7);
 
++ Suma 
+- Resta 
+* Multiplicación 
+/ División 
+% Módulo
+
+
 
 sin(x) : devuelve el seno de x. 
 cos(x) : devuelve el coseno de x. 
@@ -24,17 +31,28 @@ tanh(x)  : devuelve la tangente hiperbólica de x.
 exp(x)  : devuelve la exponencial de x. 
 log(x) : devuelve el logaritmo neperiano de x. 
 log10(x) : devuelve el logaritmo decimal de x. 
-pow(x,y) : devuelve xy. 
-sqrt(x) : devuelve la raíz cuadrada de x. 
+**pow(x,y) : devuelve x^y. 
+**sqrt(x) : devuelve la raíz cuadrada de x. 
 ceil(x) :  devuelve  el número entero mayor que o igual a x. 
 floor(x) : redondea por defecto el valor de x. 
-fabs(x) : devuelve el valor absoluto de un número en coma flotante. 
+**fabs(x) : devuelve el valor absoluto de un número en coma flotante. 
 labs(x) : devuelve el valor absoluto de un entero largo (long). 
 abs(x) : valor absoluto de un número entero. 
 fmod(x,y) : calcula el resto de la división real x/y. 
 
 
+=====CONVERTIR NUM A LETRAS===============
+#include <cstdio>
 
+int n = 3;
+double val = 20.6667;
+char buf[20];
+
+snprintf(buf, sizeof(buf), "%d", n);       // buf = "3"
+snprintf(buf, sizeof(buf), "%.4f", val);   // buf = "20.6667"
+snprintf(buf, sizeof(buf), "%g", val);     // buf = "20.6667" (quita ceros sobrantes)
+cout << buf;
+================================
 
 Operador Descripción 
 < 		Menor que 
@@ -68,7 +86,7 @@ do {
 	cout << "Tu has introducido= " << n << "\n"; 
 	} while (n != 0); 
 
-for (int n=1; n<=10; n++) { 
+for (int n=0; n<=10; n++) { 
 cout << n << ", "; 
 } 
 
