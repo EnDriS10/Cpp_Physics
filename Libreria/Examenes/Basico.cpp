@@ -11,6 +11,12 @@ double 		Números reales en doble precisión 	8 bytes
 #include <iomanip>
 cout << setprecision(7);
 
+
+double aux[] = {0.000, 0.635, 0.635, -0.635, -0.635};
+double *z = copy_vect(aux, 5); // Reserva new double[5] y copia los valores
+delete[] z;
+
+
 + Suma 
 - Resta 
 * Multiplicación 
