@@ -63,6 +63,11 @@ Operador Descripción
 != 		Distinto de
 
 
+Negación !a
+AND      a && b 
+OR       a || b
+
+
 =====CONDICIONALES===============
 	if (x > 0) 
 		cout << "x es positiva" << endl;  
