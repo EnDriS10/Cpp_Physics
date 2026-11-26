@@ -16,6 +16,17 @@ double aux[] = {0.000, 0.635, 0.635, -0.635, -0.635};
 double *z = copy_vect(aux, 5); // Reserva new double[5] y copia los valores
 delete[] z;
 
+double **A = zeros_mat(n, n);
+double vals[4][4] = {
+    { 2.50, -1.25,  0.00,  0.00},
+    {-1.25,  2.50, -1.25,  0.00},
+    { 0.00, -1.25,  2.50, -1.25},
+    { 0.00,  0.00, -1.25,  1.25}
+};
+for (int i = 0; i < n; i++)
+    for (int j = 0; j < n; j++)
+        A[i][j] = vals[i][j];
+        
 
 + Suma 
 - Resta 
