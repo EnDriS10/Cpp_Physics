@@ -218,7 +218,18 @@ double* prod_mat_vect(double **A, int f, int c, double *x, int n) {
 #define MC_FN_lu_forma1
 // Factorización LU (Forma 1 - Descomposición de Doolittle)
 // Las matrices L y U deben estar pre-creadas con zeros_mat(n, n)
+// Descripción: Factorizacion LU de Doolittle: A = L*U con unos en la diagonal de L (L triangular inferior, U triangular superior). Sirve para resolver varios sistemas con la misma A.
+// Condiciones: A cuadrada y con menores principales no nulos (si aparece un cero en la diagonal de U avisa: habria que pivotar). L y U se crean antes con zeros_mat(n, n).
 void lu_forma1(double **A, int n, double **L, double **U) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {2, 1, 1, 4, 3, 3, 8, 7, 9};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double **L = zeros_mat(3, 3), **U = zeros_mat(3, 3);
+        lu_forma1(A, 3, L, U);
+        // Resultado: L = [1, 0, 0; 2, 1, 0; 4, 3, 1] , U = [2, 1, 1; 0, 1, 1; 0, 0, 2]
+    */
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             if (i <= j) {
@@ -251,7 +262,17 @@ void lu_forma1(double **A, int n, double **L, double **U) {
 #define MC_FN_lu_forma2
 // Factorización LU (Forma 2 - Alternando fila U y columna L)
 // Las matrices L y U deben estar pre-creadas con zeros_mat(n, n)
+// Descripción: Factorizacion LU de Crout: A = L*U con unos en la diagonal de U (se calcula alternando una fila de U y una columna de L). Mismas condiciones que lu_forma1; L y U se crean antes con zeros_mat(n, n).
 void lu_forma2(double **A, int n, double **L, double **U) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {2, 1, 1, 4, 3, 3, 8, 7, 9};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double **L = zeros_mat(3, 3), **U = zeros_mat(3, 3);
+        lu_forma2(A, 3, L, U);
+        // Resultado: L = [1, 0, 0; 2, 1, 0; 4, 3, 1] , U = [2, 1, 1; 0, 1, 1; 0, 0, 2]
+    */
     for (int i = 0; i < n; i++) {
         // Obtención de una fila de U
         for (int j = i; j < n; j++) {
@@ -282,7 +303,17 @@ void lu_forma2(double **A, int n, double **L, double **U) {
 #ifndef MC_FN_lu_forma2_sol
 #define MC_FN_lu_forma2_sol
 // Resuelve Ax = b usando LU Forma 2
+// Descripción: Resuelve A*x = b con la factorizacion de Crout (unos en la diagonal de U). Mismas condiciones que lu_forma1.
 double* lu_forma2_sol(double **A, double *b, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {2, 1, 1, 4, 3, 3, 8, 7, 9};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {4, 10, 24};
+        double *x = lu_forma2_sol(A, b, 3);
+        // Resultado: x = [1, 1, 1]
+    */
     double **L = zeros_mat(n, n);
     double **U = zeros_mat(n, n);
     double *z = new double[n];
@@ -317,7 +348,16 @@ double* lu_forma2_sol(double **A, double *b, int n) {
 #ifndef MC_FN_det_lu
 #define MC_FN_det_lu
 // 1B. Determinante usando Factorización LU (Doolittle)
+// Descripción: Determinante con la factorizacion LU de Doolittle: det(A) = producto de la diagonal de U (L tiene unos). Condicion: A cuadrada con menores principales no nulos. No modifica A.
 double det_lu(double **A, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {1, -1, 2, 3, 0, 1, 1, 0, 2};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double d = det_lu(A, 3);
+        // Resultado: d = 5
+    */
     double **L = zeros_mat(n, n);
     double **U = zeros_mat(n, n);
     
@@ -342,7 +382,16 @@ double det_lu(double **A, int n) {
 #ifndef MC_FN_inv_lu
 #define MC_FN_inv_lu
 // 2B. Inversa de una matriz usando Factorización LU
+// Descripción: Inversa resolviendo A*x = e_j (columnas de la identidad) con la factorizacion LU, que se calcula una sola vez. Condicion: A cuadrada con det(A) != 0 (si |det| < 1e-12 avisa y devuelve NULL).
 double** inv_lu(double **A, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {1, -1, 2, 3, 0, 1, 1, 0, 2};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double **Ai = inv_lu(A, 3);
+        // Resultado: Ai = [0, 0.4, -0.2; -1, 0, 1; 0, -0.2, 0.6]
+    */
     if (fabs(det_lu(A, n)) < 1e-12) {
         print_error("No tiene inversa. Matriz singular o determinante cero.");
         return NULL;
@@ -404,7 +453,19 @@ double** inv_lu(double **A, int n) {
 		// Devuelve el vector solucion 'x', y por referencia el vector de 'errores' de 
 							// cada parametro, y el coeficiente de determinacion 'R2'.
 							// -----> Ordinary Least Squares, OLS, minimos cuadrados
+// Descripción: Minimos cuadrados ordinarios (OLS) para un sistema SOBREDETERMINADO A*x = b (m ecuaciones > n incognitas): resuelve las ecuaciones normales A^T*A*x = A^T*b. Devuelve los n parametros;
+// por referencia, sus errores tipicos y el coeficiente de determinacion R2. Condiciones: m > n y columnas de A linealmente independientes (si A^T*A es singular avisa y devuelve NULL).
 double* ols_reg(double **A, double *b, int m, int n, double *&errores, double &R2) {
+    /*
+    Ejemplo de uso:
+        double Ad[10] = {1, 1, 1, 2, 1, 3, 1, 4, 1, 5};
+        double **A = zeros_mat(5, 2);
+        for (int i = 0; i < 10; i++) A[i / 2][i % 2] = Ad[i];
+        double b[5] = {2.1, 3.9, 6.2, 7.8, 10.1};
+        double *err, R2;
+        double *p = ols_reg(A, b, 5, 2, err, R2);
+        // Resultado: p = [0.05, 1.99] , err = [0.1980741, 0.05972158] , R2 = 0.9973053
+    */
     if (m <= n) {
         print_error("El sistema no esta sobredeterminado (m debe ser mayor que n).");
         return NULL;
@@ -465,7 +526,16 @@ double* ols_reg(double **A, double *b, int m, int n, double *&errores, double &R
 #define MC_FN_poly_reg
 // 1. Regresión Polinómica: y = a0 + a1*x + a2*x^2 + ... + am*x^m
 						// Devuelve un vector con [a0, a1, ..., am]
+// Descripción: Regresion polinomica y = a0 + a1*x + ... + am*x^m por minimos cuadrados. Devuelve [a0, a1, ..., am], los errores de cada parametro y R2. Condicion: m_datos > grado + 1 (mas datos que parametros).
 double* poly_reg(double *x, double *y, int m_datos, int grado, double *&errores, double &R2) {
+    /*
+    Ejemplo de uso:
+        double x[6] = {0, 1, 2, 3, 4, 5};
+        double y[6] = {1.1, 2.9, 9.2, 18.8, 33.1, 51.0};
+        double *err, R2;
+        double *a = poly_reg(x, y, 6, 2, err, R2);
+        // Resultado: a = [1.067857, -0.05321429, 2.008929] , R2 = 0.9999452   (ajuste cuadratico y = a0 + a1*x + a2*x^2)
+    */
     int n = grado + 1; // Numero de incognitas (parametros)
     double **A = gen_mat(A, m_datos, n);
     
@@ -486,7 +556,16 @@ double* poly_reg(double *x, double *y, int m_datos, int grado, double *&errores,
 #define MC_FN_lin_reg
 // 2. Regresión Lineal: y = a0 + a1*x 
 // (Es simplemente un caso particular de la regresion polinomica de grado 1)
+// Descripción: Regresion lineal y = a0 + a1*x por minimos cuadrados (poly_reg de grado 1). Devuelve [a0, a1], los errores de cada parametro y R2 (R2 cercano a 1 = buen ajuste).
 double* lin_reg(double *x, double *y, int m_datos, double *&errores, double &R2) {
+    /*
+    Ejemplo de uso:
+        double x[5] = {1, 2, 3, 4, 5};
+        double y[5] = {2.1, 3.9, 6.2, 7.8, 10.1};
+        double *err, R2;
+        double *p = lin_reg(x, y, 5, err, R2);
+        // Resultado: p = [0.05, 1.99] , R2 = 0.9973053
+    */
     return poly_reg(x, y, m_datos, 1, errores, R2);
 }
 #endif // MC_FN_lin_reg
@@ -495,7 +574,16 @@ double* lin_reg(double *x, double *y, int m_datos, double *&errores, double &R2)
 #define MC_FN_exp_reg
 // 3. Regresión Exponencial: y = a * e^(bx)
 		// Devuelve [a, b]. Realiza la linealizacion: ln(y) = ln(a) + b*x
+// Descripción: Regresion exponencial y = a*e^(b*x), linealizada como ln(y) = ln(a) + b*x. Devuelve [a, b], los errores y R2. Condicion: todos los y deben ser positivos.
 double* exp_reg(double *x, double *y, int m_datos, double *&errores, double &R2) {
+    /*
+    Ejemplo de uso:
+        double x[5] = {1, 2, 3, 4, 5};
+        double y[5] = {3.30, 5.44, 8.96, 14.78, 24.37};
+        double *err, R2;
+        double *p = exp_reg(x, y, 5, err, R2);
+        // Resultado: p = [2.001532, 0.4998357] , R2 = 0.9999998   (datos de y = 2*e^(0.5x))
+    */
     double *ln_y = new double[m_datos];
     for (int i = 0; i < m_datos; i++) {
         if (y[i] <= 0.0) {
@@ -531,7 +619,16 @@ double* exp_reg(double *x, double *y, int m_datos, double *&errores, double &R2)
 #define MC_FN_regresion_logaritmica
 // 4. Regresión Logarítmica: y = a + b * ln(x)
 // Devuelve [a, b]. Realiza la linealizacion: Y = a + b*X (con X = ln(x))
+// Descripción: Regresion logaritmica y = a + b*ln(x), linealizada con X = ln(x). Devuelve [a, b], los errores y R2. Condicion: todos los x deben ser positivos.
 double* regresion_logaritmica(double *x, double *y, int m_datos, double *&errores, double &R2) {
+    /*
+    Ejemplo de uso:
+        double x[6] = {1, 2, 3, 4, 5, 6};
+        double y[6] = {1.00, 2.39, 3.20, 3.77, 4.22, 4.58};
+        double *err, R2;
+        double *p = regresion_logaritmica(x, y, 6, err, R2);
+        // Resultado: p = [1.002302, 1.998128] , R2 = 0.9999962   (datos de y = 1 + 2*ln(x))
+    */
     double *ln_x = new double[m_datos];
     for (int i = 0; i < m_datos; i++) {
         if (x[i] <= 0.0) {
@@ -552,7 +649,16 @@ double* regresion_logaritmica(double *x, double *y, int m_datos, double *&errore
 #define MC_FN_regresion_potencial
 // 5. Regresión Potencial: y = a * x^b
 // Devuelve [a, b]. Realiza linealizacion bilogaritmica: ln(y) = ln(a) + b*ln(x)
+// Descripción: Regresion potencial y = a*x^b, linealizada como ln(y) = ln(a) + b*ln(x). Devuelve [a, b], los errores y R2. Condicion: todos los x e y deben ser positivos.
 double* regresion_potencial(double *x, double *y, int m_datos, double *&errores, double &R2) {
+    /*
+    Ejemplo de uso:
+        double x[5] = {1, 2, 3, 4, 5};
+        double y[5] = {3.00, 8.49, 15.59, 24.00, 33.54};
+        double *err, R2;
+        double *p = regresion_potencial(x, y, 5, err, R2);
+        // Resultado: p = [3.000646, 1.499905] , R2 = 0.9999999   (datos de y = 3*x^1.5)
+    */
     double *ln_x = new double[m_datos];
     double *ln_y = new double[m_datos];
     
@@ -591,7 +697,18 @@ double* regresion_potencial(double *x, double *y, int m_datos, double *&errores,
 #define MC_FN_regresion_sinusoidal
 // 6. Regresión Sinusoidal / Armónica: y = a0 + a1*cos(w*x) + a2*sin(w*x)
 // Devuelve [a0, a1, a2]. Requiere que le introduzcas la frecuencia angular 'w'
+// Descripción: Regresion armonica y = a0 + a1*cos(w*x) + a2*sin(w*x) por minimos cuadrados, con la frecuencia angular w CONOCIDA (es lineal en a0, a1, a2). Devuelve [a0, a1, a2], los errores y R2.
+// Condiciones: conocer w y tener al menos 3 datos repartidos a lo largo de un periodo o mas.
 double* regresion_sinusoidal(double *x, double *y, int m_datos, double w, double *&errores, double &R2) {
+    /*
+    Ejemplo de uso:
+        double x[8] = {0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5};
+        double y[8] = {1.0 + 0.5*cos(2*0.0) + 0.8*sin(2*0.0), 1.0 + 0.5*cos(2*0.5) + 0.8*sin(2*0.5), 1.0 + 0.5*cos(2*1.0) + 0.8*sin(2*1.0), 1.0 + 0.5*cos(2*1.5) + 0.8*sin(2*1.5),
+                       1.0 + 0.5*cos(2*2.0) + 0.8*sin(2*2.0), 1.0 + 0.5*cos(2*2.5) + 0.8*sin(2*2.5), 1.0 + 0.5*cos(2*3.0) + 0.8*sin(2*3.0), 1.0 + 0.5*cos(2*3.5) + 0.8*sin(2*3.5)};
+        double *err, R2;
+        double *p = regresion_sinusoidal(x, y, 8, 2.0, err, R2);
+        // Resultado: p = [1, 0.5, 0.8]   (datos de y = 1 + 0.5cos(2x) + 0.8sin(2x))
+    */
     int n = 3;
     double **A = gen_mat(A, m_datos, n);
     

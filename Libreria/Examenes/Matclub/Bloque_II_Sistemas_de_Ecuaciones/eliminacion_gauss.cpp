@@ -121,7 +121,18 @@ double** coppy_mat(double **M, int f, int c) {
 #ifndef MC_FN_gauss_solve
 #define MC_FN_gauss_solve
 // Eliminación de Gauss con pivoteo parcial
+// Descripción: Eliminacion gaussiana con pivoteo parcial (en cada columna toma el pivote de mayor valor absoluto) y sustitucion regresiva. No modifica A ni b.
+// Condiciones: A cuadrada y no singular (si es singular o casi, avisa y devuelve NULL). El pivoteo evita dividir por cero y reduce el error de redondeo.
 double* gauss_solve(double **A, double *b, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {4, -2, 1, -3, -1, 4, 1, -1, 3};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {15, 8, 13};
+        double *x = gauss_solve(A, b, 3);
+        // Resultado: x = [2, -2, 3]
+    */
     // Trabajamos sobre copias para no destruir las matrices originales
     double **M = coppy_mat(A, n, n);
     double *vb = copy_vect(b, n);
@@ -176,7 +187,18 @@ double* gauss_solve(double **A, double *b, int n) {
 #ifndef MC_FN_gauss_jordan_solve
 #define MC_FN_gauss_jordan_solve
 // Método de Gauss-Jordan (Diagonal a 1, ceros arriba y abajo)
+// Descripción: Metodo de Gauss-Jordan: lleva la matriz a la identidad (ceros por encima y por debajo de la diagonal) y la solucion queda en la columna de terminos independientes. No modifica A ni b.
+// Condiciones: A cuadrada y no singular (si no, avisa y devuelve NULL). Hace mas operaciones que Gauss, pero sirve tambien para calcular inversas.
 double* gauss_jordan_solve(double **A, double *b, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {4, -2, 1, -3, -1, 4, 1, -1, 3};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {15, 8, 13};
+        double *x = gauss_jordan_solve(A, b, 3);
+        // Resultado: x = [2, -2, 3]
+    */
     double **M = coppy_mat(A, n, n);
     double *vb = copy_vect(b, n);
     

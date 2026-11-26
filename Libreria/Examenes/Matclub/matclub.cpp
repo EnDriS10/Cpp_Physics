@@ -190,6 +190,19 @@ void del_vect(double *a) {
     delete[] a;
 }
 
+// Numero de elementos de un array estatico (equivalente a length de MATLAB)
+// Descripción: Devuelve el tamaño de un array declarado con tamaño fijo (double a[5], int b[3]...). Funciona con cualquier tipo.
+// OJO: con arrays dinamicos (new) el compilador no guarda el tamaño; en ese caso hay que conservar la 'n' con la que se crearon.
+template <class T, int N> int length_vect(T (&a)[N]) {
+    /*
+    Ejemplo de uso:
+        double datos[] = {4.5, 1.2, 7.8, 3.3};
+        int n = length_vect(datos);     // n = 4
+        double *m = mean_vect(datos, n);
+    */
+    return N;
+}
+
 // Copia un vector
 double* copy_vect(double *a, int n) {
     double *c = new double[n];
@@ -976,7 +989,14 @@ double* sort_vect_algorithm(double *a, int n) {
 }
 
 // Calcula la mediana del vector (el valor central)
+// Descripción: Mediana del vector: el valor central de los datos ordenados (media de los dos centrales si n es par). No modifica el vector original.
 double median_vect(double *a, int n) { 
+    /*
+    Ejemplo de uso:
+        double a[5] = {5, 1, 4, 2, 3};
+        double m = median_vect(a, 5);
+        // Resultado: m = 3
+    */
     // Ordenamos el vector usando tu funcion Introsort
     double *sorted = sort_vect(a, n); 
     double med = 0.0;
@@ -1283,7 +1303,14 @@ double* find_if_vect(double *a, int n, bool (*cond)(double), int &n_out) {
 }
 
 // Media movil con ventana w (centrada; en los bordes la ventana se recorta)
+// Descripción: Media movil de ventana w: cada elemento es la media de los datos de su entorno (centrada; en los bordes la ventana se recorta). Sirve para suavizar ruido. Condicion: w >= 1.
 double* movmean_vect(double *a, int n, int w) {
+    /*
+    Ejemplo de uso:
+        double a[6] = {1, 2, 3, 4, 5, 6};
+        double *m = movmean_vect(a, 6, 3);
+        // Resultado: m = [1.5, 2, 3, 4, 5, 5.5]
+    */
     if (w < 1) {
         print_error("movmean_vect: la ventana debe ser >= 1");
         return NULL;
@@ -1335,6 +1362,25 @@ void del_mat(double **M, int f){
     	delete[] M[i];
     	}
     delete [] M;
+}
+
+// Matriz a partir de un array plano (por filas)
+// Descripción: Crea una matriz f x c (new) copiando los f*c valores del array v en orden de filas: v[i*c + j] pasa a M[i][j]. Liberar con del_mat(M, f).
+double** mat_from_arr(double *v, int f, int c) {
+    /*
+    Ejemplo de uso:
+        double aux[] = { 2, 3, 5, 7 };
+        double **A = mat_from_arr(aux, 2, 2);
+        print_mat(A, 2, 2, "A");
+        del_mat(A, 2);
+    */
+    double **M = gen_mat(M, f, c);
+    for (int i = 0; i < f; i++) {
+        for (int j = 0; j < c; j++) {
+            M[i][j] = v[i * c + j];
+        }
+    }
+    return M;
 }
 
 // Multiplicación de matrices (A de fa x ca, B de fb x cb)
@@ -2173,8 +2219,16 @@ double** read_mat_auto(const char* filename, int &f_out, int &c_out) {
 // ============================================================================
 
 // Método de la Biseccion (Una sola raiz)
+// Descripción: Encuentra una raiz de f en [x1,x2] partiendo el intervalo por la mitad en cada paso. Convergencia lineal, pero SIEMPRE converge.
+// Condiciones: f continua y f(x1)*f(x2) < 0 (signos opuestos); no sirve para raices dobles (f no cambia de signo). Se detiene cuando el intervalo mide menos de 2*tol1 o |f| < tol2.
 double biseccion(double (*f)(double), double x1, double x2, 
                  double tol1, double tol2, int max_iter) {
+    /*
+    Ejemplo de uso:
+        double f(double x) { return x*x*x + x*x - 3*x - 3; }
+        double r = biseccion(f, 1.0, 2.0, 1e-10, 1e-10, 100);
+        // Resultado: r = 1.732051   (raiz exacta: sqrt(3))
+    */
     if (f(x1) * f(x2) >= 0.0) {
         print_error("f(x1) y f(x2) deben tener signos opuestos");
         return MC_NAN; 
@@ -2197,8 +2251,16 @@ double biseccion(double (*f)(double), double x1, double x2,
 }
 
 // Biseccion Multiple: Busca multiples raices en un intervalo [a, b]
+// Descripción: Busca TODAS las raices de f en [a,b]: divide el intervalo en 'subintervalos', aplica biseccion en cada uno donde f cambia de signo y elimina duplicados. Devuelve el array y su tamaño en num_raices.
+// Condiciones: f continua; no detecta raices dobles ni dos raices dentro de un mismo subintervalo (en ese caso aumenta 'subintervalos').
 double* biseccion_multi(double (*f)(double), double a, double b, 
                         int subintervalos, double tol, int &num_raices) {
+    /*
+    Ejemplo de uso:
+        int nr;
+        double *r = biseccion_multi(sin, 1.0, 10.0, 100, 1e-10, nr);
+        // Resultado: nr = 3 , r = [3.141593, 6.283185, 9.424778]   (raices de sin(x) en [1,10]: pi, 2pi, 3pi)
+    */
     
     // Reserva de memoria al estilo de la libreria
     double* raices = new double[subintervalos]; 
@@ -2232,8 +2294,16 @@ double* biseccion_multi(double (*f)(double), double a, double b,
 }
 
 // Método de la Secante (Una sola raiz)
+// Descripción: Sustituye f'(x) de Newton por la pendiente de la recta por los dos ultimos puntos: x2 = x1 - f1*(x0-x1)/(f0-f1). Convergencia superlineal (p = 1.62) sin calcular derivadas.
+// Condiciones: dos puntos iniciales cerca de la raiz (no hace falta que encierren la raiz); puede divergir si f(x0) ~ f(x1). Sigue mientras |f| > tol1 o |dx| > tol2.
 double secante(double (*f)(double), double x0, double x1, 
                double tol1, double tol2, int max_iter) {
+    /*
+    Ejemplo de uso:
+        double f(double x) { return 3*x + sin(x) - exp(x); }
+        double r = secante(f, 1.0, 0.0, 1e-10, 1e-10, 100);
+        // Resultado: r = 0.3604217
+    */
     if (fabs(f(x0)) < fabs(f(x1))) {
         intercambiar_elem(x0, x1); // Uso de tu funcion de intercambio
     }
@@ -2259,8 +2329,17 @@ double secante(double (*f)(double), double x0, double x1,
 }
 
 // Método de Newton (Una sola raiz)
+// Descripción: Metodo de Newton-Raphson: x(n+1) = x(n) - f(x)/f'(x). Convergencia cuadratica (p = 2) cuando la raiz es simple y x0 esta cerca.
+// Condiciones: f derivable y f'(x) != 0 en el entorno de la raiz; con raices multiples pierde velocidad (usa newton_modificado). Si f' se anula el proceso se detiene. Sigue mientras |f| > tol1 o |dx| > tol2.
 double newton(double (*f)(double), double (*df)(double), double x0, 
               double tol1, double tol2, int max_iter) {
+    /*
+    Ejemplo de uso:
+        double f(double x)  { return 3*x + sin(x) - exp(x); }
+        double df(double x) { return 3 + cos(x) - exp(x); }
+        double r = newton(f, df, 0.0, 1e-12, 1e-12, 50);
+        // Resultado: r = 0.3604217
+    */
     double x1 = x0;
     double dx = 0.0;
     int iter = 0;
@@ -2283,8 +2362,16 @@ double newton(double (*f)(double), double (*df)(double), double x0,
 }
 
 // Newton Multiple: Busca multiples raices lanzando Newton desde varios puntos
+// Descripción: Busca varias raices de f en [a,b] lanzando Newton desde puntos equiespaciados de [a,b] ('puntos_inicio' de ellos) y descartando las que caen fuera del intervalo o estan repetidas. Devuelve el array (SIN ordenar) y su tamaño en num_raices.
+// Condiciones: f derivable y df disponible; no garantiza encontrar todas las raices (depende de los puntos de partida).
 double* newton_multi(double (*f)(double), double (*df)(double), 
                      double a, double b, int puntos_inicio, double tol, int &num_raices) {
+    /*
+    Ejemplo de uso:
+        int nr;
+        double *r = newton_multi(sin, cos, 1.0, 10.0, 30, 1e-10, nr);
+        // Resultado: nr = 3 , r = [3.141593, 9.424778, 6.283185]   (raices de sin(x) en [1,10])
+    */
     
     double* raices = new double[puntos_inicio + 1];
     num_raices = 0;
@@ -2311,6 +2398,197 @@ double* newton_multi(double (*f)(double), double (*df)(double),
     return raices;
 }
 
+// Método de la Falsa Posición (regula falsi)
+// Descripción: Como la secante, pero conserva siempre un intervalo [x0,x1] que encierra la raiz, asi que no se descontrola como ella. Converge de forma lineal (mas rapido que la biseccion).
+// Condiciones: f continua en [x0,x1] y f(x0)*f(x1) < 0. Falla con raices dobles (la funcion puede no cambiar de signo). Sigue mientras |f(x2)| > tol1 o |dx| > tol2.
+double falsa_posicion(double (*f)(double), double x0, double x1, double tol1, double tol2, int max_iter) {
+    /*
+    Ejemplo de uso:
+        double f(double x) { return 3*x + sin(x) - exp(x); }
+        double r = falsa_posicion(f, 0.0, 1.0, 1e-10, 1e-10, 100);   // raiz en 0.3604217
+    */
+    if (f(x0) * f(x1) >= 0.0) {
+        print_error("falsa_posicion: f(x0) y f(x1) deben tener signos opuestos");
+        return MC_NAN;
+    }
+    double x2 = x1, dx = 0.0;
+    int iter = 0;
+    do {
+        double f0 = f(x0), f1 = f(x1);
+        double xant = x2;
+        x2 = x1 - f1 * ((x0 - x1) / (f0 - f1));
+        dx = x2 - xant;
+        if (f(x2) * f0 < 0.0) x1 = x2;
+        else                  x0 = x2;
+        iter++;
+    } while ((fabs(f(x2)) > tol1 || fabs(dx) > tol2) && iter < max_iter);
+    return x2;
+}
+
+// Método de la Iteración de Punto Fijo: x = g(x)
+// Descripción: Reescribe f(x)=0 como x=g(x) e itera x(n+1) = g(x(n)) hasta que |x(n+1)-x(n)| < tol. Convergencia lineal.
+// Condicion suficiente: g y g' continuas cerca de la raiz con |g'(x)| < 1 y x0 dentro de ese intervalo. Si |g'| > 1 diverge (la funcion avisa y devuelve NaN).
+double punto_fijo(double (*g)(double), double x0, double tol, int max_iter) {
+    /*
+    Ejemplo de uso:
+        double g(double x) { return sqrt(2*x + 3); }    // de x^2 - 2x - 3 = 0, con |g'(3)| = 1/3 < 1
+        double r = punto_fijo(g, 4.0, 1e-10, 200);       // converge a la raiz 3
+    */
+    double x1 = x0;
+    int iter = 0;
+    do {
+        x0 = x1;
+        x1 = g(x0);
+        iter++;
+        if (isNaN(x1) || fabs(x1) > 1e100) {
+            print_error("punto_fijo: la iteracion diverge (comprueba que |g'(x)| < 1 cerca de la raiz)");
+            return MC_NAN;
+        }
+    } while (fabs(x1 - x0) > tol && iter < max_iter);
+    if (iter >= max_iter && fabs(x1 - x0) > tol) print_warning("punto_fijo alcanzo max_iter sin converger.");
+    return x1;
+}
+
+// Método de Muller
+// Descripción: Ajusta una parabola por tres puntos y toma la raiz de la parabola mas cercana a x0. Convergencia superlineal (p = 1.84), parecida a Newton, y sin necesitar f'.
+// Condiciones: tres puntos iniciales distintos cerca de la raiz. Si la parabola no corta el eje x (discriminante negativo) la funcion avisa y devuelve NaN (la raiz seria compleja).
+double muller(double (*f)(double), double xa, double xb, double xc, double tol1, double tol2, int max_iter) {
+    /*
+    Ejemplo de uso:
+        double f(double x) { return 3*x + sin(x) - exp(x); }
+        double r = muller(f, 0.0, 0.5, 1.0, 1e-10, 1e-10, 50);   // raiz en 0.3604217
+    */
+    double p[3] = {xa, xb, xc};                         // ordenar: x2 < x0 < x1
+    for (int i = 0; i < 2; i++)
+        for (int j = i + 1; j < 3; j++)
+            if (p[j] < p[i]) intercambiar_elem(p[i], p[j]);
+    double x2 = p[0], x0 = p[1], x1 = p[2];
+    if (x2 == x0 || x0 == x1) { print_error("muller: los tres puntos iniciales deben ser distintos"); return MC_NAN; }
+    double r = x0, dx = 0.0;
+    int iter = 0;
+    do {
+        double f2 = f(x2), f0 = f(x0), f1 = f(x1);
+        double h1 = x1 - x0, h2 = x0 - x2;
+        double a = ((f2 - f0) + h2 * (f1 - f0) / h1) / (h2 * (h1 + h2));   // p(t) = a*t^2 + b*t + c, t = x - x0
+        double b = (f1 - f0 - a * h1 * h1) / h1;
+        double c = f0;
+        double disc = b * b - 4.0 * a * c;
+        if (disc < 0.0) {
+            print_error("muller: la parabola no corta el eje x (raices complejas). Prueba otros puntos iniciales.");
+            return MC_NAN;
+        }
+        double den = (b >= 0.0) ? b + sqrt(disc) : b - sqrt(disc);          // signo de b: denominador de mayor modulo
+        if (den == 0.0) break;
+        r = x0 - 2.0 * c / den;                                              // raiz mas cercana a x0
+        dx = r - x0;
+        if (r > x2 && r < x1) {                                              // reordenar como en la teoria
+            if (r > x0) { x2 = x0; x0 = r; }
+            else        { x1 = x0; x0 = r; }
+        } else {                                                             // r fuera del intervalo: quedarse con los 3 puntos mas cercanos
+            double q[4] = {x2, x0, x1, r};
+            for (int i = 0; i < 3; i++)
+                for (int j = i + 1; j < 4; j++)
+                    if (fabs(q[j] - r) < fabs(q[i] - r)) intercambiar_elem(q[i], q[j]);
+            double t[3] = {q[0], q[1], q[2]};
+            for (int i = 0; i < 2; i++)
+                for (int j = i + 1; j < 3; j++)
+                    if (t[j] < t[i]) intercambiar_elem(t[i], t[j]);
+            x2 = t[0]; x0 = t[1]; x1 = t[2];
+        }
+        iter++;
+    } while ((fabs(f(r)) > tol1 || fabs(dx) > tol2) && iter < max_iter);
+    return r;
+}
+
+// Método de Newton modificado para raices multiples
+// Descripción: Usa x(n+1) = x(n) - K*f(x)/f'(x), donde K es la multiplicidad de la raiz, y asi recupera la convergencia cuadratica que Newton pierde con raices dobles o triples.
+// Condiciones: conocer (o suponer) la multiplicidad K >= 1 y partir de un x0 razonablemente cerca. Con K = 1 es el metodo de Newton normal.
+double newton_modificado(double (*f)(double), double (*df)(double), double x0, int K, double tol1, double tol2, int max_iter) {
+    /*
+    Ejemplo de uso:
+        double f(double x)  { return (x - 1) * (x - 1) * (x + 2); }     // raiz doble en x = 1
+        double df(double x) { return 2 * (x - 1) * (x + 2) + (x - 1) * (x - 1); }
+        double r = newton_modificado(f, df, 2.0, 2, 1e-12, 1e-12, 50);   // K = 2: raiz en 1
+    */
+    if (K < 1) { print_error_int("newton_modificado: la multiplicidad K debe ser >= 1", K); return MC_NAN; }
+    double x1 = x0, dx = 0.0;
+    int iter = 0;
+    do {
+        double fx = f(x0), dfx = df(x0);
+        if (fx != 0.0 && dfx != 0.0) {
+            x1 = x0 - K * (fx / dfx);
+            dx = x1 - x0;
+            x0 = x1;
+        } else {
+            break;
+        }
+        iter++;
+    } while ((fabs(f(x1)) > tol1 || fabs(dx) > tol2) && iter < max_iter);
+    return x1;
+}
+
+// Aceleración de Aitken (extrapolación de Aitken, Delta^2)
+// Descripción: A partir de tres aproximaciones consecutivas x0, x1, x2 de un proceso que converge LINEALMENTE (biseccion, falsa posicion, punto fijo) estima la raiz mejorada:
+// r = x0 - (x1-x0)^2 / (x2 - 2*x1 + x0). Si el denominador es nulo (ya ha convergido) devuelve x2.
+double aitken(double x0, double x1, double x2) {
+    /*
+    Ejemplo de uso:
+        // Punto fijo de g(x) = sqrt(2x+3) desde 4:  4, 3.31662, 3.10375
+        double r = aitken(4.0, 3.31662, 3.10375);    // 3.00744 (mejor que x4 = 3.01144)
+    */
+    double d2 = x2 - 2.0 * x1 + x0;
+    if (fabs(d2) < 1e-300) return x2;
+    double d1 = x1 - x0;
+    return x0 - d1 * d1 / d2;
+}
+
+// Punto fijo acelerado con Aitken (método de Steffensen)
+// Descripción: En cada paso calcula x1 = g(x0), x2 = g(x1) y los sustituye por la extrapolacion de Aitken. Converge mucho mas rapido que punto_fijo (cuadraticamente) si |g'| < 1 cerca de la raiz.
+double punto_fijo_aitken(double (*g)(double), double x0, double tol, int max_iter) {
+    /*
+    Ejemplo de uso:
+        double g(double x) { return sqrt(2*x + 3); }
+        double r = punto_fijo_aitken(g, 4.0, 1e-12, 50);    // 3 en muy pocas iteraciones
+    */
+    double dx = 0.0;
+    int iter = 0;
+    do {
+        double x1 = g(x0), x2 = g(x1);
+        double xn = aitken(x0, x1, x2);
+        if (isNaN(xn) || fabs(xn) > 1e100) {
+            print_error("punto_fijo_aitken: la iteracion diverge");
+            return MC_NAN;
+        }
+        dx = xn - x0;
+        x0 = xn;
+        iter++;
+    } while (fabs(dx) > tol && iter < max_iter);
+    return x0;
+}
+
+// Orden de convergencia de un método iterativo
+// Descripción: Dada la sucesion de errores |E_n| de un metodo, estima p en |E(n+1)| = cte*|E(n)|^p como la pendiente de la recta log|E(n+1)| frente a log|E(n)| (minimos cuadrados).
+// Necesita al menos 3 errores positivos. p = 1 lineal, p = 2 cuadratica (Newton, raiz simple), p = 1.62 secante, p = 1.84 Muller.
+double orden_convergencia(double *err, int n) {
+    /*
+    Ejemplo de uso:
+        double E[] = {1e-1, 5e-3, 1.25e-5, 7.8125e-11};   // E(n+1) = 0.5 * E(n)^2
+        double p = orden_convergencia(E, 4);               // p = 2 (convergencia cuadratica)
+    */
+    if (n < 3) { print_error_int("orden_convergencia: se necesitan al menos 3 errores", n); return MC_NAN; }
+    double sx = 0.0, sy = 0.0, sxx = 0.0, sxy = 0.0;
+    int m = 0;
+    for (int i = 0; i < n - 1; i++) {
+        if (err[i] == 0.0 || err[i + 1] == 0.0) continue;
+        double X = log(fabs(err[i])), Y = log(fabs(err[i + 1]));
+        sx += X; sy += Y; sxx += X * X; sxy += X * Y;
+        m++;
+    }
+    double den = m * sxx - sx * sx;
+    if (m < 2 || fabs(den) < 1e-300) { print_error("orden_convergencia: errores insuficientes o todos iguales"); return MC_NAN; }
+    return (m * sxy - sx * sy) / den;
+}
+
 
 
 // ============================================================================
@@ -2323,7 +2601,18 @@ double* newton_multi(double (*f)(double), double (*df)(double),
 
 // Factorización LU (Forma 1 - Descomposición de Doolittle)
 // Las matrices L y U deben estar pre-creadas con zeros_mat(n, n)
+// Descripción: Factorizacion LU de Doolittle: A = L*U con unos en la diagonal de L (L triangular inferior, U triangular superior). Sirve para resolver varios sistemas con la misma A.
+// Condiciones: A cuadrada y con menores principales no nulos (si aparece un cero en la diagonal de U avisa: habria que pivotar). L y U se crean antes con zeros_mat(n, n).
 void lu_forma1(double **A, int n, double **L, double **U) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {2, 1, 1, 4, 3, 3, 8, 7, 9};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double **L = zeros_mat(3, 3), **U = zeros_mat(3, 3);
+        lu_forma1(A, 3, L, U);
+        // Resultado: L = [1, 0, 0; 2, 1, 0; 4, 3, 1] , U = [2, 1, 1; 0, 1, 1; 0, 0, 2]
+    */
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             if (i <= j) {
@@ -2351,7 +2640,17 @@ void lu_forma1(double **A, int n, double **L, double **U) {
 }
 
 // Resuelve Ax = b usando LU Forma 1
+// Descripción: Resuelve A*x = b con la factorizacion de Doolittle: A = L*U, luego L*z = b (sustitucion progresiva) y U*x = z (sustitucion regresiva). Mismas condiciones que lu_forma1.
 double* lu_forma1_sol(double **A, double *b, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {2, 1, 1, 4, 3, 3, 8, 7, 9};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {4, 10, 24};
+        double *x = lu_forma1_sol(A, b, 3);
+        // Resultado: x = [1, 1, 1]
+    */
     double **L = zeros_mat(n, n);
     double **U = zeros_mat(n, n);
     double *z = new double[n];
@@ -2382,7 +2681,17 @@ double* lu_forma1_sol(double **A, double *b, int n) {
 
 // Factorización LU (Forma 2 - Alternando fila U y columna L)
 // Las matrices L y U deben estar pre-creadas con zeros_mat(n, n)
+// Descripción: Factorizacion LU de Crout: A = L*U con unos en la diagonal de U (se calcula alternando una fila de U y una columna de L). Mismas condiciones que lu_forma1; L y U se crean antes con zeros_mat(n, n).
 void lu_forma2(double **A, int n, double **L, double **U) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {2, 1, 1, 4, 3, 3, 8, 7, 9};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double **L = zeros_mat(3, 3), **U = zeros_mat(3, 3);
+        lu_forma2(A, 3, L, U);
+        // Resultado: L = [1, 0, 0; 2, 1, 0; 4, 3, 1] , U = [2, 1, 1; 0, 1, 1; 0, 0, 2]
+    */
     for (int i = 0; i < n; i++) {
         // Obtención de una fila de U
         for (int j = i; j < n; j++) {
@@ -2409,7 +2718,17 @@ void lu_forma2(double **A, int n, double **L, double **U) {
 }
 
 // Resuelve Ax = b usando LU Forma 2
+// Descripción: Resuelve A*x = b con la factorizacion de Crout (unos en la diagonal de U). Mismas condiciones que lu_forma1.
 double* lu_forma2_sol(double **A, double *b, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {2, 1, 1, 4, 3, 3, 8, 7, 9};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {4, 10, 24};
+        double *x = lu_forma2_sol(A, b, 3);
+        // Resultado: x = [1, 1, 1]
+    */
     double **L = zeros_mat(n, n);
     double **U = zeros_mat(n, n);
     double *z = new double[n];
@@ -2444,7 +2763,18 @@ double* lu_forma2_sol(double **A, double *b, int n) {
 // ----------------------------------------------------------------------------
 
 // Eliminación de Gauss con pivoteo parcial
+// Descripción: Eliminacion gaussiana con pivoteo parcial (en cada columna toma el pivote de mayor valor absoluto) y sustitucion regresiva. No modifica A ni b.
+// Condiciones: A cuadrada y no singular (si es singular o casi, avisa y devuelve NULL). El pivoteo evita dividir por cero y reduce el error de redondeo.
 double* gauss_solve(double **A, double *b, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {4, -2, 1, -3, -1, 4, 1, -1, 3};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {15, 8, 13};
+        double *x = gauss_solve(A, b, 3);
+        // Resultado: x = [2, -2, 3]
+    */
     // Trabajamos sobre copias para no destruir las matrices originales
     double **M = coppy_mat(A, n, n);
     double *vb = copy_vect(b, n);
@@ -2496,7 +2826,18 @@ double* gauss_solve(double **A, double *b, int n) {
 }
 
 // Método de Gauss-Jordan (Diagonal a 1, ceros arriba y abajo)
+// Descripción: Metodo de Gauss-Jordan: lleva la matriz a la identidad (ceros por encima y por debajo de la diagonal) y la solucion queda en la columna de terminos independientes. No modifica A ni b.
+// Condiciones: A cuadrada y no singular (si no, avisa y devuelve NULL). Hace mas operaciones que Gauss, pero sirve tambien para calcular inversas.
 double* gauss_jordan_solve(double **A, double *b, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {4, -2, 1, -3, -1, 4, 1, -1, 3};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {15, 8, 13};
+        double *x = gauss_jordan_solve(A, b, 3);
+        // Resultado: x = [2, -2, 3]
+    */
     double **M = coppy_mat(A, n, n);
     double *vb = copy_vect(b, n);
     
@@ -2548,7 +2889,18 @@ double* gauss_jordan_solve(double **A, double *b, int n) {
 
 // Se le pasa la matriz completa A y el vector independiente f.
 // La funcion extrae las diagonales automaticamente.
+// Descripción: Resuelve A*x = f con A TRIDIAGONAL (algoritmo de Thomas: LU + sustitucion), extrayendo las tres diagonales de la matriz completa. Necesita solo ~8n operaciones en vez de n^3.
+// Condiciones: A tridiagonal (todo lo demas ceros) y sin ceros en los pivotes (se cumple si es diagonalmente dominante). Si no quieres construir la matriz, usa tridiag_vect_solve.
 double* tridiag_solve(double **A, double *f, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {2, -1, 0, -1, 2, -1, 0, -1, 2};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double f[3] = {1, 0, 1};
+        double *x = tridiag_solve(A, f, 3);
+        // Resultado: x = [1, 1, 1]
+    */
     // 1. Extraccion de las diagonales de la matriz A
     double *a = new double[n - 1]; // Diagonal inferior
     double *b = new double[n];     // Diagonal principal
@@ -2636,7 +2988,16 @@ double* tridiag_vect_solve(double *a, double *b, double *c, double *f, int n) {
 // ----------------------------------------------------------------------------
 
 /// Función Auxiliar: Comprueba estrictamente si una matriz es diagonalmente dominante
+// Descripción: Comprueba si A es diagonalmente dominante por filas: |a_ii| >= suma de |a_ij| (j != i) en todas las filas. Es una condicion SUFICIENTE (no necesaria) para que converjan Jacobi y Gauss-Seidel. Esta funcion acepta tambien la igualdad (dominancia debil).
 bool check_dominancia(double **A, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {6, -2, 1, -2, 7, 2, 1, 2, -5};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        bool ok = check_dominancia(A, 3);
+        // Resultado: ok = true
+    */
     for (int i = 0; i < n; i++) {
         double sum = 0.0;
         for (int j = 0; j < n; j++) {
@@ -2651,7 +3012,17 @@ bool check_dominancia(double **A, int n) {
 }
 
 // Función Auxiliar: Reordena las filas (A y b) solo si la matriz no es dominante de entrada
+// Descripción: Intenta conseguir dominancia diagonal reordenando las filas de A y b EN SITIO (no cambia la solucion del sistema). Si A ya es dominante no hace nada. Devuelve true si lo consigue; si no, avisa de que la convergencia no esta garantizada.
 bool reorder_diagonals(double **A, double *b, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {6, -2, 1, 1, 2, -5, -2, 7, 2};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {11, -1, 5};
+        bool ok = reorder_diagonals(A, b, 3);
+        // Resultado: ok = true , A = [6, -2, 1; -2, 7, 2; 1, 2, -5] , b = [11, 5, -1]
+    */
     // 1. Si ya es dominante de fábrica, no alteramos el sistema original
     if (check_dominancia(A, n)) {
         return true; 
@@ -2692,7 +3063,18 @@ bool reorder_diagonals(double **A, double *b, int n) {
 
 
 // Método Iterativo de Jacobi (Desplazamientos simultáneos)
+// Descripción: Metodo iterativo de Jacobi (desplazamientos simultaneos): x_i(k+1) = (b_i - sum_{j!=i} a_ij*x_j(k)) / a_ii. Para cuando la norma del cambio entre dos iteraciones es menor que tol o se llega a max_iter (en ese caso avisa).
+// Condiciones: a_ii != 0 (si hay un cero en la diagonal avisa y devuelve NULL) y convergencia garantizada si A es diagonalmente dominante. Util en matrices grandes y dispersas. No modifica A ni b.
 double* jacobi_solve(double **A, double *b, int n, double tol, int max_iter) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {6, -2, 1, -2, 7, 2, 1, 2, -5};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {11, 5, -1};
+        double *x = jacobi_solve(A, b, 3, 1e-10, 500);
+        // Resultado: x = [2, 1, 1]
+    */
     // 1. Trabajamos con copias para no destruir las matrices originales del main
     double **M = coppy_mat(A, n, n);
     double *vb = copy_vect(b, n);
@@ -2745,7 +3127,18 @@ double* jacobi_solve(double **A, double *b, int n, double tol, int max_iter) {
 
 
 // Método Iterativo de Gauss-Seidel (Desplazamientos sucesivos)
+// Descripción: Metodo iterativo de Gauss-Seidel (desplazamientos sucesivos): usa en cada paso los valores ya actualizados de la misma iteracion, por lo que suele converger el doble de rapido que Jacobi.
+// Condiciones: a_ii != 0 (si no, avisa y devuelve NULL); converge si A es diagonalmente dominante o simetrica definida positiva. Para cuando la norma del cambio entre iteraciones es menor que tol. No modifica A ni b.
 double* gauss_seidel_solve(double **A, double *b, int n, double tol, int max_iter ) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {6, -2, 1, -2, 7, 2, 1, 2, -5};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {11, 5, -1};
+        double *x = gauss_seidel_solve(A, b, 3, 1e-10, 500);
+        // Resultado: x = [2, 1, 1]
+    */
     double **M = coppy_mat(A, n, n);
     double *vb = copy_vect(b, n);
     
@@ -2796,7 +3189,18 @@ double* gauss_seidel_solve(double **A, double *b, int n, double tol, int max_ite
 
 // Método de Sobrerrelajación (SOR) - Extensión de Gauss-Seidel
 // El valor óptimo de w está entre 1 y 2. Para w=1 es idéntico a Gauss-Seidel.
+// Descripción: Sobrerrelajacion sucesiva (SOR): Gauss-Seidel con factor de relajacion w, x_i = (1-w)*x_i + w*x_i(GS). w = 1 es Gauss-Seidel; el optimo suele estar entre 1 y 2 (si w > 1 acelera).
+// Condiciones: 0 < w < 2 (si no, avisa y devuelve NULL) y las mismas que Gauss-Seidel (A simetrica definida positiva o diagonalmente dominante). No modifica A ni b.
 double* sor_solve(double **A, double *b, int n, double w, double tol, int max_iter) {
+    /*
+    Ejemplo de uso:
+        double Ad[16] = {4, -1, -1, -1, -1, 4, -1, -1, -1, -1, 4, -1, -1, -1, -1, 4};
+        double **A = zeros_mat(4, 4);
+        for (int i = 0; i < 16; i++) A[i / 4][i % 4] = Ad[i];
+        double b[4] = {1, 1, 1, 1};
+        double *x = sor_solve(A, b, 4, 1.3, 1e-10, 500);
+        // Resultado: x = [1, 1, 1, 1]
+    */
     if (w <= 0.0 || w >= 2.0) {
         print_error("El factor de relajacion w debe estar estrictamente entre 0 y 2 para evitar divergencias.");
         return NULL;
@@ -2859,7 +3263,16 @@ double* sor_solve(double **A, double *b, int n, double w, double tol, int max_it
 // ============================================================================
 
 // 1A. Determinante usando Eliminación Gaussiana (con pivoteo)
+// Descripción: Determinante por eliminacion gaussiana con pivoteo: producto de los pivotes, cambiando el signo en cada intercambio de filas. No modifica A. Condicion: A cuadrada. det = 0 indica matriz singular.
 double det_gauss(double **A, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {1, -1, 2, 3, 0, 1, 1, 0, 2};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double d = det_gauss(A, 3);
+        // Resultado: d = 5
+    */
     double **M = coppy_mat(A, n, n);
     double det = 1.0;
     int swaps = 0;
@@ -2903,7 +3316,16 @@ double det_gauss(double **A, int n) {
 }
 
 // 1B. Determinante usando Factorización LU (Doolittle)
+// Descripción: Determinante con la factorizacion LU de Doolittle: det(A) = producto de la diagonal de U (L tiene unos). Condicion: A cuadrada con menores principales no nulos. No modifica A.
 double det_lu(double **A, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {1, -1, 2, 3, 0, 1, 1, 0, 2};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double d = det_lu(A, 3);
+        // Resultado: d = 5
+    */
     double **L = zeros_mat(n, n);
     double **U = zeros_mat(n, n);
     
@@ -2924,7 +3346,16 @@ double det_lu(double **A, int n) {
 }
 
 // 2A. Inversa de una matriz usando Gauss-Jordan
+// Descripción: Inversa por Gauss-Jordan sobre la matriz ampliada [A | I]: al reducir A a I, la parte derecha queda A^-1. Condicion: A cuadrada con det(A) != 0 (si |det| < 1e-12 avisa y devuelve NULL). No modifica A.
 double** inv_gj(double **A, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {1, -1, 2, 3, 0, 1, 1, 0, 2};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double **Ai = inv_gj(A, 3);
+        // Resultado: Ai = [0, 0.4, -0.2; -1, 0, 1; 0, -0.2, 0.6]
+    */
     if (fabs(det_gauss(A, n)) < 1e-12) {
         print_error("No tiene inversa. Matriz singular o determinante cero.");
         return NULL;
@@ -2978,7 +3409,16 @@ double** inv_gj(double **A, int n) {
 }
 
 // 2B. Inversa de una matriz usando Factorización LU
+// Descripción: Inversa resolviendo A*x = e_j (columnas de la identidad) con la factorizacion LU, que se calcula una sola vez. Condicion: A cuadrada con det(A) != 0 (si |det| < 1e-12 avisa y devuelve NULL).
 double** inv_lu(double **A, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {1, -1, 2, 3, 0, 1, 1, 0, 2};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double **Ai = inv_lu(A, 3);
+        // Resultado: Ai = [0, 0.4, -0.2; -1, 0, 1; 0, -0.2, 0.6]
+    */
     if (fabs(det_lu(A, n)) < 1e-12) {
         print_error("No tiene inversa. Matriz singular o determinante cero.");
         return NULL;
@@ -3040,7 +3480,19 @@ double** inv_lu(double **A, int n) {
 		// Devuelve el vector solucion 'x', y por referencia el vector de 'errores' de 
 							// cada parametro, y el coeficiente de determinacion 'R2'.
 							// -----> Ordinary Least Squares, OLS, minimos cuadrados
+// Descripción: Minimos cuadrados ordinarios (OLS) para un sistema SOBREDETERMINADO A*x = b (m ecuaciones > n incognitas): resuelve las ecuaciones normales A^T*A*x = A^T*b. Devuelve los n parametros;
+// por referencia, sus errores tipicos y el coeficiente de determinacion R2. Condiciones: m > n y columnas de A linealmente independientes (si A^T*A es singular avisa y devuelve NULL).
 double* ols_reg(double **A, double *b, int m, int n, double *&errores, double &R2) {
+    /*
+    Ejemplo de uso:
+        double Ad[10] = {1, 1, 1, 2, 1, 3, 1, 4, 1, 5};
+        double **A = zeros_mat(5, 2);
+        for (int i = 0; i < 10; i++) A[i / 2][i % 2] = Ad[i];
+        double b[5] = {2.1, 3.9, 6.2, 7.8, 10.1};
+        double *err, R2;
+        double *p = ols_reg(A, b, 5, 2, err, R2);
+        // Resultado: p = [0.05, 1.99] , err = [0.1980741, 0.05972158] , R2 = 0.9973053
+    */
     if (m <= n) {
         print_error("El sistema no esta sobredeterminado (m debe ser mayor que n).");
         return NULL;
@@ -3099,7 +3551,16 @@ double* ols_reg(double **A, double *b, int m, int n, double *&errores, double &R
 
 // 1. Regresión Polinómica: y = a0 + a1*x + a2*x^2 + ... + am*x^m
 						// Devuelve un vector con [a0, a1, ..., am]
+// Descripción: Regresion polinomica y = a0 + a1*x + ... + am*x^m por minimos cuadrados. Devuelve [a0, a1, ..., am], los errores de cada parametro y R2. Condicion: m_datos > grado + 1 (mas datos que parametros).
 double* poly_reg(double *x, double *y, int m_datos, int grado, double *&errores, double &R2) {
+    /*
+    Ejemplo de uso:
+        double x[6] = {0, 1, 2, 3, 4, 5};
+        double y[6] = {1.1, 2.9, 9.2, 18.8, 33.1, 51.0};
+        double *err, R2;
+        double *a = poly_reg(x, y, 6, 2, err, R2);
+        // Resultado: a = [1.067857, -0.05321429, 2.008929] , R2 = 0.9999452   (ajuste cuadratico y = a0 + a1*x + a2*x^2)
+    */
     int n = grado + 1; // Numero de incognitas (parametros)
     double **A = gen_mat(A, m_datos, n);
     
@@ -3117,13 +3578,31 @@ double* poly_reg(double *x, double *y, int m_datos, int grado, double *&errores,
 
 // 2. Regresión Lineal: y = a0 + a1*x 
 // (Es simplemente un caso particular de la regresion polinomica de grado 1)
+// Descripción: Regresion lineal y = a0 + a1*x por minimos cuadrados (poly_reg de grado 1). Devuelve [a0, a1], los errores de cada parametro y R2 (R2 cercano a 1 = buen ajuste).
 double* lin_reg(double *x, double *y, int m_datos, double *&errores, double &R2) {
+    /*
+    Ejemplo de uso:
+        double x[5] = {1, 2, 3, 4, 5};
+        double y[5] = {2.1, 3.9, 6.2, 7.8, 10.1};
+        double *err, R2;
+        double *p = lin_reg(x, y, 5, err, R2);
+        // Resultado: p = [0.05, 1.99] , R2 = 0.9973053
+    */
     return poly_reg(x, y, m_datos, 1, errores, R2);
 }
 
 // 3. Regresión Exponencial: y = a * e^(bx)
 		// Devuelve [a, b]. Realiza la linealizacion: ln(y) = ln(a) + b*x
+// Descripción: Regresion exponencial y = a*e^(b*x), linealizada como ln(y) = ln(a) + b*x. Devuelve [a, b], los errores y R2. Condicion: todos los y deben ser positivos.
 double* exp_reg(double *x, double *y, int m_datos, double *&errores, double &R2) {
+    /*
+    Ejemplo de uso:
+        double x[5] = {1, 2, 3, 4, 5};
+        double y[5] = {3.30, 5.44, 8.96, 14.78, 24.37};
+        double *err, R2;
+        double *p = exp_reg(x, y, 5, err, R2);
+        // Resultado: p = [2.001532, 0.4998357] , R2 = 0.9999998   (datos de y = 2*e^(0.5x))
+    */
     double *ln_y = new double[m_datos];
     for (int i = 0; i < m_datos; i++) {
         if (y[i] <= 0.0) {
@@ -3156,7 +3635,16 @@ double* exp_reg(double *x, double *y, int m_datos, double *&errores, double &R2)
 
 // 4. Regresión Logarítmica: y = a + b * ln(x)
 // Devuelve [a, b]. Realiza la linealizacion: Y = a + b*X (con X = ln(x))
+// Descripción: Regresion logaritmica y = a + b*ln(x), linealizada con X = ln(x). Devuelve [a, b], los errores y R2. Condicion: todos los x deben ser positivos.
 double* regresion_logaritmica(double *x, double *y, int m_datos, double *&errores, double &R2) {
+    /*
+    Ejemplo de uso:
+        double x[6] = {1, 2, 3, 4, 5, 6};
+        double y[6] = {1.00, 2.39, 3.20, 3.77, 4.22, 4.58};
+        double *err, R2;
+        double *p = regresion_logaritmica(x, y, 6, err, R2);
+        // Resultado: p = [1.002302, 1.998128] , R2 = 0.9999962   (datos de y = 1 + 2*ln(x))
+    */
     double *ln_x = new double[m_datos];
     for (int i = 0; i < m_datos; i++) {
         if (x[i] <= 0.0) {
@@ -3174,7 +3662,16 @@ double* regresion_logaritmica(double *x, double *y, int m_datos, double *&errore
 
 // 5. Regresión Potencial: y = a * x^b
 // Devuelve [a, b]. Realiza linealizacion bilogaritmica: ln(y) = ln(a) + b*ln(x)
+// Descripción: Regresion potencial y = a*x^b, linealizada como ln(y) = ln(a) + b*ln(x). Devuelve [a, b], los errores y R2. Condicion: todos los x e y deben ser positivos.
 double* regresion_potencial(double *x, double *y, int m_datos, double *&errores, double &R2) {
+    /*
+    Ejemplo de uso:
+        double x[5] = {1, 2, 3, 4, 5};
+        double y[5] = {3.00, 8.49, 15.59, 24.00, 33.54};
+        double *err, R2;
+        double *p = regresion_potencial(x, y, 5, err, R2);
+        // Resultado: p = [3.000646, 1.499905] , R2 = 0.9999999   (datos de y = 3*x^1.5)
+    */
     double *ln_x = new double[m_datos];
     double *ln_y = new double[m_datos];
     
@@ -3210,7 +3707,18 @@ double* regresion_potencial(double *x, double *y, int m_datos, double *&errores,
 
 // 6. Regresión Sinusoidal / Armónica: y = a0 + a1*cos(w*x) + a2*sin(w*x)
 // Devuelve [a0, a1, a2]. Requiere que le introduzcas la frecuencia angular 'w'
+// Descripción: Regresion armonica y = a0 + a1*cos(w*x) + a2*sin(w*x) por minimos cuadrados, con la frecuencia angular w CONOCIDA (es lineal en a0, a1, a2). Devuelve [a0, a1, a2], los errores y R2.
+// Condiciones: conocer w y tener al menos 3 datos repartidos a lo largo de un periodo o mas.
 double* regresion_sinusoidal(double *x, double *y, int m_datos, double w, double *&errores, double &R2) {
+    /*
+    Ejemplo de uso:
+        double x[8] = {0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5};
+        double y[8] = {1.0 + 0.5*cos(2*0.0) + 0.8*sin(2*0.0), 1.0 + 0.5*cos(2*0.5) + 0.8*sin(2*0.5), 1.0 + 0.5*cos(2*1.0) + 0.8*sin(2*1.0), 1.0 + 0.5*cos(2*1.5) + 0.8*sin(2*1.5),
+                       1.0 + 0.5*cos(2*2.0) + 0.8*sin(2*2.0), 1.0 + 0.5*cos(2*2.5) + 0.8*sin(2*2.5), 1.0 + 0.5*cos(2*3.0) + 0.8*sin(2*3.0), 1.0 + 0.5*cos(2*3.5) + 0.8*sin(2*3.5)};
+        double *err, R2;
+        double *p = regresion_sinusoidal(x, y, 8, 2.0, err, R2);
+        // Resultado: p = [1, 0.5, 0.8]   (datos de y = 1 + 0.5cos(2x) + 0.8sin(2x))
+    */
     int n = 3;
     double **A = gen_mat(A, m_datos, n);
     
@@ -3239,7 +3747,16 @@ double* regresion_sinusoidal(double *x, double *y, int m_datos, double w, double
 
 // 7. ---------------- SPLINE CUBICA NATURAL ----------------
 // Devuelve las segundas derivadas M[0..n-1] (M[0]=M[n-1]=0). Liberar con del_vect.
+// Descripción: Calcula las segundas derivadas M[0..n-1] de la spline cubica NATURAL (M[0] = M[n-1] = 0) que pasa por los n puntos (x,y). Se calcula una vez y se usa con spline_eval.
+// Condiciones: n >= 3 y x estrictamente creciente. Liberar con delete[] (o del_vect).
 double* spline_coef(double *x, double *y, int n) {
+    /*
+    Ejemplo de uso:
+        double x[5] = {0, 1, 2, 3, 4};
+        double y[5] = {0, 1, 4, 9, 16};          // y = x^2
+        double *M = spline_coef(x, y, 5);
+        // Resultado: M = [0, 2.571429, 1.714286, 2.571429, 0]
+    */
     if (n < 3) { print_error("spline_coef: se necesitan al menos 3 puntos"); return NULL; }
     double *M = new double[n];
     int m = n - 2;
@@ -3263,14 +3780,32 @@ double* spline_coef(double *x, double *y, int n) {
     return M;
 }
 // x debe estar ordenado de menor a mayor. Fuera de [x0, xn-1] extrapola con el tramo extremo.
+// Descripción: Evalua en xi la spline cubica natural a partir de las segundas derivadas M (de spline_coef). Condiciones: x creciente; fuera de [x0, x(n-1)] extrapola con el tramo extremo (poco fiable).
 double spline_eval(double *x, double *y, double *M, int n, double xi) {
+    /*
+    Ejemplo de uso:
+        double x[5] = {0, 1, 2, 3, 4};
+        double y[5] = {0, 1, 4, 9, 16};          // y = x^2
+        double *M = spline_coef(x, y, 5);
+        double v = spline_eval(x, y, M, 5, 2.5);
+        // Resultado: v = 6.232143
+    */
     int k = 0;
     while (k < n - 2 && xi > x[k + 1]) k++;
     double h = x[k + 1] - x[k];
     double A = (x[k + 1] - xi) / h, B = (xi - x[k]) / h;
     return A * y[k] + B * y[k + 1] + ((A*A*A - A) * M[k] + (B*B*B - B) * M[k + 1]) * h * h / 6.0;
 }
+// Spline cúbica natural en una sola llamada
+// Descripción: Spline cubica natural en una sola llamada (calcula M, evalua en xi y libera memoria). Si vas a evaluar muchos puntos usa spline_coef + spline_eval. Condiciones: n >= 3 y x creciente.
 double spline_interp(double *x, double *y, int n, double xi) {
+    /*
+    Ejemplo de uso:
+        double x[5] = {0, 1, 2, 3, 4};
+        double y[5] = {0, 1, 4, 9, 16};          // y = x^2
+        double v = spline_interp(x, y, 5, 2.5);
+        // Resultado: v = 6.232143   (exacto para y = x^2: 6.25 (la spline natural impone M = 0 en los extremos))
+    */
     double *M = spline_coef(x, y, n);
     if (M == NULL) return MC_NAN;
     double r = spline_eval(x, y, M, n, xi);
@@ -3280,7 +3815,16 @@ double spline_interp(double *x, double *y, int n, double xi) {
 
 // 8. ---------------- NEWTON (diferencias divididas) ----------------
 // Devuelve c[0..n-1] = f[x0], f[x0,x1], ... Liberar con del_vect.
+// Descripción: Coeficientes del polinomio de Newton (diferencias divididas f[x0], f[x0,x1], ...). Se calculan una vez y permiten evaluar el polinomio con newton_eval o AÑADIR un punto sin rehacer los calculos anteriores.
+// Condiciones: nodos x distintos (no hace falta que esten ordenados ni equiespaciados). Liberar con delete[].
 double* newton_coef(double *x, double *y, int n) {
+    /*
+    Ejemplo de uso:
+        double x[4] = {3.2, 2.7, 1.0, 4.8};
+        double y[4] = {22.0, 17.8, 14.2, 38.3};
+        double *c = newton_coef(x, y, 4);
+        // Resultado: c = [22, 8.4, 2.855615, -0.5274801]
+    */
     if (n < 1) { print_error("newton_coef: n debe ser >= 1"); return NULL; }
     double *c = copy_vect(y, n);
     for (int j = 1; j < n; j++) {
@@ -3293,7 +3837,16 @@ double* newton_coef(double *x, double *y, int n) {
     return c;
 }
 // Evalua el polinomio de Newton en xi (forma anidada tipo Horner)
+// Descripción: Evalua en xi el polinomio de Newton con la forma anidada (tipo Horner) a partir de los coeficientes c de newton_coef y los nodos x. Es el mismo polinomio que el de Lagrange (el polinomio interpolador es unico).
 double newton_eval(double *x, double *c, int n, double xi) {
+    /*
+    Ejemplo de uso:
+        double x[4] = {3.2, 2.7, 1.0, 4.8};
+        double y[4] = {22.0, 17.8, 14.2, 38.3};
+        double *c = newton_coef(x, y, 4);
+        double v = newton_eval(x, c, 4, 3.0);
+        // Resultado: v = 20.21196
+    */
     double r = c[n - 1];
     for (int i = n - 2; i >= 0; i--) r = r * (xi - x[i]) + c[i];
     return r;
@@ -3301,7 +3854,15 @@ double newton_eval(double *x, double *c, int n, double xi) {
 
 // 9. ---------------- LAGRANGE (forma baricentrica) ----------------
 // Devuelve los pesos w[i] = 1 / prod_{j!=i} (x[i]-x[j]). Liberar con del_vect.
+// Descripción: Pesos baricentricos w[i] = 1 / prod_{j!=i}(x_i - x_j) del polinomio de Lagrange. Se calculan una vez y permiten evaluar con lagrange_val en O(n) por punto. Condicion: nodos x distintos. Liberar con delete[].
 double* lagrange_coef(double *x, int n) {
+    /*
+    Ejemplo de uso:
+        double x[4] = {3.2, 2.7, 1.0, 4.8};
+        double y[4] = {22.0, 17.8, 14.2, 38.3};
+        double *w = lagrange_coef(x, 4);
+        // Resultado: w = [-0.5681818, 0.5602241, -0.07036307, 0.0783208]
+    */
     if (n < 1) { print_error("lagrange_coef: n debe ser >= 1"); return NULL; }
     double *w = new double[n];
     for (int i = 0; i < n; i++) {
@@ -3317,7 +3878,16 @@ double* lagrange_coef(double *x, int n) {
     return w;
 }
 // Evalua el polinomio de Lagrange en xi con los pesos w (O(n) por punto)
+// Descripción: Evalua en xi el polinomio de Lagrange (forma baricentrica) con los pesos w de lagrange_coef. Si xi coincide con un nodo devuelve directamente su y. Mismo polinomio que newton_eval.
 double lagrange_val(double *x, double *y, double *w, int n, double xi) {
+    /*
+    Ejemplo de uso:
+        double x[4] = {3.2, 2.7, 1.0, 4.8};
+        double y[4] = {22.0, 17.8, 14.2, 38.3};
+        double *w = lagrange_coef(x, 4);
+        double v = lagrange_val(x, y, w, 4, 3.0);
+        // Resultado: v = 20.21196
+    */
     double num = 0.0, den = 0.0;
     for (int i = 0; i < n; i++) {
         double d = xi - x[i];
@@ -3327,6 +3897,55 @@ double lagrange_val(double *x, double *y, double *w, int n, double xi) {
         den += t;
     }
     return num / den;
+}
+
+// Polinomio base de Lagrange L_i(x)
+// Descripción: Evalua L_i(xi) = prod_{j!=i} (xi - x_j)/(x_i - x_j), el polinomio de grado n-1 que vale 1 en x_i y 0 en el resto de nodos. El polinomio interpolador es P(x) = sum y_i*L_i(x).
+double lagrange_base(double *x, int n, int i, double xi) {
+    /*
+    Ejemplo de uso:
+        double x[] = {3.2, 2.7, 1.0, 4.8};
+        double L0 = lagrange_base(x, 4, 0, 3.2);    // 1 (en su propio nodo)
+        double L1 = lagrange_base(x, 4, 1, 3.2);    // 0 (en otro nodo)
+    */
+    if (i < 0 || i >= n) { print_error_int("lagrange_base: el indice i esta fuera de rango", i); return MC_NAN; }
+    double L = 1.0;
+    for (int j = 0; j < n; j++) {
+        if (j == i) continue;
+        if (x[i] == x[j]) { print_error("lagrange_base: hay nodos x repetidos"); return MC_NAN; }
+        L *= (xi - x[j]) / (x[i] - x[j]);
+    }
+    return L;
+}
+
+// Interpolación de Lagrange en una sola llamada
+// Descripción: Evalua en xi el polinomio de Lagrange que pasa por los n puntos (x,y) (calcula los pesos, evalua y libera memoria). Si vas a evaluar muchos puntos usa lagrange_coef + lagrange_val.
+double lagrange_interp(double *x, double *y, int n, double xi) {
+    /*
+    Ejemplo de uso:
+        double x[] = {3.2, 2.7, 1.0, 4.8}, y[] = {22.0, 17.8, 14.2, 38.3};
+        double v = lagrange_interp(x, y, 4, 3.0);   // 20.212
+    */
+    double *w = lagrange_coef(x, n);
+    if (w == NULL) return MC_NAN;
+    double r = lagrange_val(x, y, w, n, xi);
+    delete[] w;
+    return r;
+}
+
+// Interpolación de Newton en una sola llamada
+// Descripción: Evalua en xi el polinomio de Newton (diferencias divididas) que pasa por los n puntos (x,y). Si vas a evaluar muchos puntos usa newton_coef + newton_eval.
+double newton_interp(double *x, double *y, int n, double xi) {
+    /*
+    Ejemplo de uso:
+        double x[] = {3.2, 2.7, 1.0, 4.8}, y[] = {22.0, 17.8, 14.2, 38.3};
+        double v = newton_interp(x, y, 4, 3.0);     // 20.212
+    */
+    double *c = newton_coef(x, y, n);
+    if (c == NULL) return MC_NAN;
+    double r = newton_eval(x, c, n, xi);
+    delete[] c;
+    return r;
 }
 
 
@@ -3484,8 +4103,97 @@ double newton_prog_error_sig(double x0, double h, double *dif0, int n, double xi
 // CALCULO NUMERICO CON FUNCIONES
 // ----------------------------------------------------------------------------
 
-// Derivada parcial numérica usando diferencias finitas progresivas.
-// Descripción: Calcula el cambio de la función 'f' respecto a la variable 'j' variando 'h'.
+// Pesos de derivación (derivada del polinomio de Lagrange)
+// Descripción: Para los m nodos xs[0..m-1] calcula los pesos w[j] tales que f^(orden)(xt) ~ sum(w[j]*f(xs[j])), con orden = 1 o 2. Vale para nodos NO equiespaciados.
+// Con nodos equiespaciados reproduce las formulas clasicas (centrales, progresivas y regresivas). 'w' debe tener m posiciones.
+void pesos_deriv_lagrange(double *xs, int m, double xt, int orden, double *w) {
+    /*
+    Ejemplo de uso:
+        double xs[] = {1.9, 2.0, 2.1}, w[3];
+        pesos_deriv_lagrange(xs, 3, 2.0, 1, w);     // w = {-5, 0, 5}  (central: (f(x+h)-f(x-h))/(2h) con h = 0.1)
+    */
+    for (int j = 0; j < m; j++) {
+        double D = 1.0;
+        for (int k = 0; k < m; k++) if (k != j) D *= (xs[j] - xs[k]);
+        double s = 0.0;
+        for (int a = 0; a < m; a++) {
+            if (a == j) continue;
+            if (orden == 1) {
+                double p = 1.0;
+                for (int k = 0; k < m; k++) if (k != j && k != a) p *= (xt - xs[k]);
+                s += p;
+            } else {
+                for (int l = 0; l < m; l++) {
+                    if (l == j || l == a) continue;
+                    double p = 1.0;
+                    for (int k = 0; k < m; k++) if (k != j && k != a && k != l) p *= (xt - xs[k]);
+                    s += p;
+                }
+            }
+        }
+        w[j] = s / D;
+    }
+}
+
+// Derivada parcial CENTRAL de alta precisión
+// Descripción: Calcula df/dx_j con diferencias centrales de 'puntos' puntos (3, 5, 7 o 9; error O(h^(puntos-1))). Mas puntos = mas precision pero mas evaluaciones de f (puntos-1).
+// Si h <= 0 elige automaticamente el paso que equilibra truncamiento y redondeo: h = eps^(1/puntos) * max(1, |x_j|). f debe ser suave (derivable) en el entorno del punto.
+double part_derv_c(double (*f)(double*, int), double *x, int n, int j, double h, int puntos) {
+    /*
+    Ejemplo de uso:
+        double mi_func(double *v, int n) { return v[0]*v[0]*v[1] + sin(v[1]); }
+        double punto[] = {2.0, 0.5};
+        double dfdx = part_derv_c(mi_func, punto, 2, 0, 0.0, 5);   // 2*x*y = 2.0 (paso automatico, 5 puntos)
+        double dfdy = part_derv_c(mi_func, punto, 2, 1, 1e-3, 7);  // x^2 + cos(y) = 4.8775826 (h = 1e-3, 7 puntos)
+    */
+    if (puntos < 3 || puntos > 9 || puntos % 2 == 0) { print_error_int("part_derv_c: puntos debe ser impar entre 3 y 9", puntos); return MC_NAN; }
+    if (j < 0 || j >= n) { print_error_int("part_derv_c: la variable j esta fuera de rango", j); return MC_NAN; }
+    if (h <= 0.0) h = pow(2.220446049250313e-16, 1.0 / puntos) * ((fabs(x[j]) > 1.0) ? fabs(x[j]) : 1.0);
+    int m = puntos / 2;
+    double xs[9], w[9];
+    for (int k = 0; k < puntos; k++) xs[k] = (double)(k - m);
+    pesos_deriv_lagrange(xs, puntos, 0.0, 1, w);          // pesos centrales para paso unidad
+    double *xh = copy_vect(x, n);
+    double suma = 0.0;
+    for (int k = 0; k < puntos; k++) {
+        if (k == m) continue;                              // el peso central es 0
+        xh[j] = x[j] + (k - m) * h;
+        suma += w[k] * f(xh, n);
+    }
+    delete[] xh;
+    return suma / h;
+}
+
+// Derivada parcial segunda CENTRAL de alta precisión
+// Descripción: Calcula d2f/dx_j2 con diferencias centrales de 'puntos' puntos (3, 5, 7 o 9; error O(h^(puntos-1)) con puntos centrados). Si h <= 0 elige el paso automatico h = eps^(1/(puntos+1)) * max(1, |x_j|).
+// Necesita puntos evaluaciones de f. f debe ser suave en el entorno del punto.
+double part2_derv_c(double (*f)(double*, int), double *x, int n, int j, double h, int puntos) {
+    /*
+    Ejemplo de uso:
+        double mi_func(double *v, int n) { return v[0]*v[0]*v[1] + sin(v[1]); }
+        double punto[] = {2.0, 0.5};
+        double d2fdx2 = part2_derv_c(mi_func, punto, 2, 0, 0.0, 5);   // 2*y = 1.0
+        double d2fdy2 = part2_derv_c(mi_func, punto, 2, 1, 0.0, 5);   // -sin(y) = -0.4794255
+    */
+    if (puntos < 3 || puntos > 9 || puntos % 2 == 0) { print_error_int("part2_derv_c: puntos debe ser impar entre 3 y 9", puntos); return MC_NAN; }
+    if (j < 0 || j >= n) { print_error_int("part2_derv_c: la variable j esta fuera de rango", j); return MC_NAN; }
+    if (h <= 0.0) h = pow(2.220446049250313e-16, 1.0 / (puntos + 1)) * ((fabs(x[j]) > 1.0) ? fabs(x[j]) : 1.0);
+    int m = puntos / 2;
+    double xs[9], w[9];
+    for (int k = 0; k < puntos; k++) xs[k] = (double)(k - m);
+    pesos_deriv_lagrange(xs, puntos, 0.0, 2, w);
+    double *xh = copy_vect(x, n);
+    double suma = 0.0;
+    for (int k = 0; k < puntos; k++) {
+        xh[j] = x[j] + (k - m) * h;
+        suma += w[k] * f(xh, n);
+    }
+    delete[] xh;
+    return suma / (h * h);
+}
+
+// Derivada parcial numérica CENTRAL de 5 puntos (error O(h^4)).
+// Descripción: Calcula df/dx_j con diferencias centrales de 5 puntos y paso automatico (eps^(1/5)*max(1,|x_j|)). Para elegir el paso o el nº de puntos (3, 5, 7, 9) usa part_derv_c.
 double part_derv(double (*f)(double*, int), double *x, int n, int j) {
     /*
     Ejemplo de uso:
@@ -3493,18 +4201,11 @@ double part_derv(double (*f)(double*, int), double *x, int n, int j) {
         double punto[] = {2.0, 3.14};
         double df_dy = part_derv(mi_func, punto, 2, 1);
     */
-    double *xh = copy_vect(x, n);
-    double h = (fabs(x[j]) > 1e-8) ? 0.0001 * x[j] : 1e-5; 
-    
-    xh[j] = x[j] + h; 
-    double deriv = (f(xh, n) - f(x, n)) / h; // Fórmula de diferencias progresivas
-    
-    delete[] xh;
-    return deriv;
+    return part_derv_c(f, x, n, j, 0.0, 5);
 }
 
 // Derivada total
-// Descripción: Calcula la derivada total dF/dt sumando el producto de las derivadas parciales por dx_i/dt.
+// Descripción: Calcula la derivada total dF/dt sumando el producto de las derivadas parciales por dx_i/dt. Usa part_derv (centrales de 5 puntos, O(h^4)).
 double total_derv(double (*f)(double*, int), double *x, double *dx_dt, int n) {
     /*
     Ejemplo de uso:
@@ -3521,7 +4222,7 @@ double total_derv(double (*f)(double*, int), double *x, double *dx_dt, int n) {
 }
 
 // Gradiente
-// Descripción: Devuelve un vector con todas las derivadas parciales de una función escalar.
+// Descripción: Devuelve un vector con todas las derivadas parciales de una función escalar. Usa part_derv (centrales de 5 puntos); para elegir paso y puntos usa gradiente().
 double* grad_vect(double (*f)(double*, int), double *x, int n) {
     /*
     Ejemplo de uso:
@@ -3539,7 +4240,7 @@ double* grad_vect(double (*f)(double*, int), double *x, int n) {
 }
 
 // Matriz Jacobiana
-// Descripción: Construye la matriz nxn de derivadas parciales para un sistema de n funciones.
+// Descripción: Construye la matriz nxn de derivadas parciales para un sistema de n funciones. Usa part_derv (centrales de 5 puntos, O(h^4)).
 double** jacobian_mat(double (*AF[])(double*, int), double *x, int n) {
     /*
     Ejemplo de uso:
@@ -3556,6 +4257,92 @@ double** jacobian_mat(double (*AF[])(double*, int), double *x, int n) {
         }
     }
     return J;
+}
+
+// Gradiente de un campo escalar (alta precisión)
+// Descripción: Devuelve el vector (df/dx_1, ..., df/dx_n) en el punto x con diferencias centrales de 'puntos' puntos (3, 5, 7 o 9) y paso h (h <= 0 = automatico). Es la mejor opcion para precision;
+// grad_vect hace lo mismo con valores fijos (5 puntos, paso automatico). Liberar con delete[].
+double* gradiente(double (*f)(double*, int), double *x, int n, double h, int puntos) {
+    /*
+    Ejemplo de uso:
+        double campo(double *v, int n) { return v[0]*v[0] + v[1]*v[1] + v[2]*v[2]; }   // f = x^2 + y^2 + z^2
+        double punto[] = {1.0, 2.0, 3.0};
+        double *g = gradiente(campo, punto, 3, 0.0, 5);     // (2x, 2y, 2z) = (2, 4, 6)
+    */
+    if (puntos < 3 || puntos > 9 || puntos % 2 == 0) { print_error_int("gradiente: puntos debe ser impar entre 3 y 9", puntos); return NULL; }
+    double *g = new double[n];
+    for (int j = 0; j < n; j++) g[j] = part_derv_c(f, x, n, j, h, puntos);
+    return g;
+}
+
+// Divergencia de un campo vectorial (alta precisión)
+// Descripción: Calcula div F = dF_1/dx_1 + ... + dF_n/dx_n en el punto x. El campo se pasa como array de n funciones AF[i](x, n) (componente i). Diferencias centrales de 'puntos' puntos y paso h (h <= 0 = automatico).
+double divergencia(double (*AF[])(double*, int), double *x, int n, double h, int puntos) {
+    /*
+    Ejemplo de uso:
+        double Fx(double *v, int n) { return v[0]*v[1]; }    // F = (x*y, y*z, z*x)
+        double Fy(double *v, int n) { return v[1]*v[2]; }
+        double Fz(double *v, int n) { return v[2]*v[0]; }
+        double (*F[3])(double*, int) = {Fx, Fy, Fz};
+        double punto[] = {1.0, 2.0, 3.0};
+        double div = divergencia(F, punto, 3, 0.0, 5);       // y + z + x = 6
+    */
+    if (puntos < 3 || puntos > 9 || puntos % 2 == 0) { print_error_int("divergencia: puntos debe ser impar entre 3 y 9", puntos); return MC_NAN; }
+    double suma = 0.0;
+    for (int i = 0; i < n; i++) suma += part_derv_c(AF[i], x, n, i, h, puntos);
+    return suma;
+}
+
+// Rotacional de un campo vectorial 3D (alta precisión)
+// Descripción: Devuelve rot F = (dFz/dy - dFy/dz, dFx/dz - dFz/dx, dFy/dx - dFx/dy) en el punto x = (x, y, z). El campo son 3 funciones AF[0..2](x, 3). Diferencias centrales de 'puntos' puntos y paso h (h <= 0 = automatico).
+// Para un campo plano (2 componentes) usa rotacional_2d. Liberar con delete[].
+double* rotacional(double (*AF[])(double*, int), double *x, double h, int puntos) {
+    /*
+    Ejemplo de uso:
+        double Fx(double *v, int n) { return v[0]*v[1]; }    // F = (x*y, y*z, z*x)
+        double Fy(double *v, int n) { return v[1]*v[2]; }
+        double Fz(double *v, int n) { return v[2]*v[0]; }
+        double (*F[3])(double*, int) = {Fx, Fy, Fz};
+        double punto[] = {1.0, 2.0, 3.0};
+        double *rot = rotacional(F, punto, 0.0, 5);          // (-y, -z, -x) = (-2, -3, -1)
+    */
+    if (puntos < 3 || puntos > 9 || puntos % 2 == 0) { print_error_int("rotacional: puntos debe ser impar entre 3 y 9", puntos); return NULL; }
+    double *r = new double[3];
+    r[0] = part_derv_c(AF[2], x, 3, 1, h, puntos) - part_derv_c(AF[1], x, 3, 2, h, puntos);
+    r[1] = part_derv_c(AF[0], x, 3, 2, h, puntos) - part_derv_c(AF[2], x, 3, 0, h, puntos);
+    r[2] = part_derv_c(AF[1], x, 3, 0, h, puntos) - part_derv_c(AF[0], x, 3, 1, h, puntos);
+    return r;
+}
+
+// Rotacional de un campo vectorial plano (componente z)
+// Descripción: Para un campo F = (Fx, Fy) en el plano devuelve (rot F)_z = dFy/dx - dFx/dy en el punto x = (x, y). Es la circulacion por unidad de area. Diferencias centrales de 'puntos' puntos y paso h (h <= 0 = automatico).
+double rotacional_2d(double (*AF[])(double*, int), double *x, double h, int puntos) {
+    /*
+    Ejemplo de uso:
+        double Fx(double *v, int n) { return -v[1]; }       // rotacion rigida F = (-y, x)
+        double Fy(double *v, int n) { return v[0]; }
+        double (*F[2])(double*, int) = {Fx, Fy};
+        double punto[] = {1.0, 1.0};
+        double rz = rotacional_2d(F, punto, 0.0, 5);         // 2
+    */
+    if (puntos < 3 || puntos > 9 || puntos % 2 == 0) { print_error_int("rotacional_2d: puntos debe ser impar entre 3 y 9", puntos); return MC_NAN; }
+    return part_derv_c(AF[1], x, 2, 0, h, puntos) - part_derv_c(AF[0], x, 2, 1, h, puntos);
+}
+
+// Laplaciano de un campo escalar (alta precisión)
+// Descripción: Calcula laplaciano f = d2f/dx_1^2 + ... + d2f/dx_n^2 en el punto x con diferencias centrales de 'puntos' puntos (3, 5, 7 o 9) y paso h (h <= 0 = automatico). Una funcion armonica da 0.
+// Usa n*puntos evaluaciones de f. f debe ser suave en el entorno del punto.
+double laplaciano(double (*f)(double*, int), double *x, int n, double h, int puntos) {
+    /*
+    Ejemplo de uso:
+        double campo(double *v, int n) { return sin(v[0]) * sin(v[1]); }   // f = sin(x) sin(y)
+        double punto[] = {0.7, 1.1};
+        double lap = laplaciano(campo, punto, 2, 0.0, 5);     // -2 sin(x) sin(y) = -2*sin(0.7)*sin(1.1) = -1.1486...
+    */
+    if (puntos < 3 || puntos > 9 || puntos % 2 == 0) { print_error_int("laplaciano: puntos debe ser impar entre 3 y 9", puntos); return MC_NAN; }
+    double suma = 0.0;
+    for (int j = 0; j < n; j++) suma += part2_derv_c(f, x, n, j, h, puntos);
+    return suma;
 }
 
 // Integral Definida Numérica de una función (Regla de Simpson 1/3)
@@ -3819,12 +4606,225 @@ double** newton_raphson_multi_sys(double (*AF[])(double*, int), double **x_inits
     return soluciones;
 }
 
+// Sistema lineal pequeño SIN mensajes (ayuda para Newton en rango)
+// Descripción: Resuelve A*x = b por eliminacion gaussiana con pivoteo parcial sobre copias de A y b (no las modifica) y deja la solucion en x. Devuelve false, sin imprimir nada, si la matriz es singular.
+// Se usa en las busquedas con muchos puntos de partida, donde un Jacobiano singular es normal y no debe llenar la pantalla de errores.
+bool lineal_silencioso(double **A, double *b, int n, double *x) {
+    /*
+    Ejemplo de uso:
+        double d[4] = {2, 1, 1, 3};
+        double **A = mat_from_arr(d, 2, 2);
+        double b[2] = {3, 5}, x[2];
+        bool ok = lineal_silencioso(A, b, 2, x);     // ok = true, x = (0.8, 1.4)
+    */
+    double **M = coppy_mat(A, n, n);
+    double *r = copy_vect(b, n);
+    double esc = 0.0;
+    for (int i = 0; i < n; i++) for (int j = 0; j < n; j++) if (fabs(A[i][j]) > esc) esc = fabs(A[i][j]);
+    bool ok = (esc > 0.0);
+    for (int k = 0; k < n && ok; k++) {
+        int p = k;
+        for (int i = k + 1; i < n; i++) if (fabs(M[i][k]) > fabs(M[p][k])) p = i;
+        if (fabs(M[p][k]) < 1e-13 * esc) { ok = false; break; }
+        if (p != k) {
+            for (int j = 0; j < n; j++) intercambiar_elem(M[p][j], M[k][j]);
+            intercambiar_elem(r[p], r[k]);
+        }
+        for (int i = k + 1; i < n; i++) {
+            double fct = M[i][k] / M[k][k];
+            for (int j = k; j < n; j++) M[i][j] -= fct * M[k][j];
+            r[i] -= fct * r[k];
+        }
+    }
+    if (ok) {
+        for (int i = n - 1; i >= 0; i--) {
+            double s = r[i];
+            for (int j = i + 1; j < n; j++) s -= M[i][j] * x[j];
+            x[i] = s / M[i][i];
+        }
+    }
+    del_mat(M, n);
+    delete[] r;
+    return ok;
+}
+
+// Newton-Raphson para sistemas SIN mensajes (ayuda para Newton en rango)
+// Descripción: Igual que newton_raphson_sys pero mejora x EN SITIO, no imprime nada y devuelve true solo si converge (paso < tol, sin NaN ni divergencia) en max_iter iteraciones.
+// El Jacobiano se calcula por diferencias centrales de 5 puntos (jacobian_mat). Falla si el Jacobiano es singular o la iteracion se dispara.
+bool newton_raphson_sys_ok(double (*AF[])(double*, int), int n, double *x, double tol, int max_iter) {
+    /*
+    Ejemplo de uso:
+        double f1(double *v, int n) { return v[0]*v[0] + v[1]*v[1] - 4; }
+        double f2(double *v, int n) { return v[0]*v[1] - 1; }
+        double (*Sist[2])(double*, int) = {f1, f2};
+        double p[2] = {1.5, 0.5};
+        bool ok = newton_raphson_sys_ok(Sist, 2, p, 1e-12, 50);   // ok = true, p = (1.9318517, 0.5176381)
+    */
+    double *F = new double[n];
+    double *dx = new double[n];
+    bool conv = false;
+    for (int it = 0; it < max_iter; it++) {
+        for (int i = 0; i < n; i++) F[i] = -AF[i](x, n);
+        double **J = jacobian_mat(AF, x, n);
+        bool ok = lineal_silencioso(J, F, n, dx);
+        del_mat(J, n);
+        if (!ok) break;
+        double paso = 0.0;
+        for (int i = 0; i < n; i++) { x[i] += dx[i]; paso += dx[i] * dx[i]; }
+        paso = sqrt(paso);
+        bool malo = isNaN(paso);
+        for (int i = 0; i < n; i++) if (isNaN(x[i]) || fabs(x[i]) > 1e100) malo = true;
+        if (malo) break;
+        if (paso < tol) { conv = true; break; }
+    }
+    delete[] F; delete[] dx;
+    return conv;
+}
+
+// Newton-Raphson para sistemas: soluciones distintas a partir de una lista de semillas, solo las que caen en un rango
+// Descripción: Lanza Newton desde cada fila de 'semillas' (num_semillas x n) y se queda solo con las soluciones que (1) han convergido, (2) cumplen |F_i| < 100*tol, (3) estan dentro del rango
+// a[i] <= x_i <= b[i] y (4) no estan repetidas. Devuelve una matriz num_sol x n ordenada por la primera variable (new; liberar con del_mat(S, num_sol)) y NULL si no hay ninguna.
+// Es la version "todas las soluciones" de newton_raphson_multi_sys, que devuelve una fila por semilla (con repetidas y NaN).
+double** newton_raphson_sys_filtrado(double (*AF[])(double*, int), int n, double *a, double *b, double **semillas, int num_semillas,
+                                     double tol, int max_iter, int &num_sol) {
+    /*
+    Ejemplo de uso:
+        // f1 = x^2 + y^2 - 4, f2 = x*y - 1  (4 soluciones); semillas elegidas a mano
+        double a[2] = {0, 0}, b[2] = {3, 3};
+        double d[4] = {2, 0.5,  0.5, 2};
+        double **sem = mat_from_arr(d, 2, 2);
+        int ns;
+        double **S = newton_raphson_sys_filtrado(Sist, 2, a, b, sem, 2, 1e-12, 50, ns);   // ns = 2
+    */
+    num_sol = 0;
+    int cap = 16;
+    double **sol = new double*[cap];
+    double *x = new double[n];
+    double *F = new double[n];
+    for (int s = 0; s < num_semillas; s++) {
+        for (int i = 0; i < n; i++) x[i] = semillas[s][i];
+        if (!newton_raphson_sys_ok(AF, n, x, tol, max_iter)) continue;
+        bool valido = true;
+        for (int i = 0; i < n; i++) {                                   // dentro del rango (con un pequeño margen)
+            double marg = 1e-8 * (b[i] - a[i]) + 1e-12;
+            if (x[i] < a[i] - marg || x[i] > b[i] + marg) valido = false;
+        }
+        for (int i = 0; i < n && valido; i++) if (fabs(AF[i](x, n)) > 100.0 * tol) valido = false;   // residuo pequeño
+        for (int k = 0; k < num_sol && valido; k++) {                   // no repetida
+            bool igual = true;
+            for (int i = 0; i < n; i++) if (fabs(x[i] - sol[k][i]) > 1e-6 * (1.0 + fabs(sol[k][i]))) igual = false;
+            if (igual) valido = false;
+        }
+        if (!valido) continue;
+        if (num_sol >= cap) {
+            int ncap = 2 * cap;
+            double **t = new double*[ncap];
+            for (int k = 0; k < num_sol; k++) t[k] = sol[k];
+            delete[] sol; sol = t; cap = ncap;
+        }
+        sol[num_sol] = copy_vect(x, n);
+        num_sol++;
+    }
+    delete[] x; delete[] F;
+    for (int i = 1; i < num_sol; i++) {                                 // ordenar por x_1, x_2, ...
+        double *clave = sol[i];
+        int k = i - 1;
+        while (k >= 0) {
+            bool mayor = false;
+            for (int c = 0; c < n; c++) {
+                if (sol[k][c] > clave[c]) { mayor = true; break; }
+                if (sol[k][c] < clave[c]) break;
+            }
+            if (!mayor) break;
+            sol[k + 1] = sol[k];
+            k--;
+        }
+        sol[k + 1] = clave;
+    }
+    if (num_sol == 0) {
+        print_warning("newton_raphson_sys_filtrado: no se encontro ninguna solucion en el rango (prueba mas semillas o un rango mayor).");
+        delete[] sol;
+        return NULL;
+    }
+    return sol;
+}
+
+// Newton-Raphson para sistemas: TODAS las soluciones en un rango (malla de semillas)
+// Descripción: Resuelve F(r) = 0 con r = (x_1, ..., x_n) y devuelve todas las soluciones distintas con a[i] <= x_i <= b[i]. Lanza Newton desde una malla de 'divisiones' puntos por variable (divisiones^n semillas, extremos incluidos).
+// Devuelve una matriz num_sol x n ordenada por la primera variable (liberar con del_mat(S, num_sol)); NULL si no hay ninguna. Condiciones: F derivable; encuentra todas las soluciones cuya cuenca de atraccion contenga alguna semilla,
+// asi que usa mas 'divisiones' si sospechas que faltan (el coste crece como divisiones^n: para n >= 3 mejor newton_raphson_sys_rango_aleat).
+double** newton_raphson_sys_rango(double (*AF[])(double*, int), int n, double *a, double *b, int divisiones, double tol, int max_iter, int &num_sol) {
+    /*
+    Ejemplo de uso:
+        double f1(double *v, int n) { return v[0]*v[0] + v[1]*v[1] - 4; }     // circunferencia
+        double f2(double *v, int n) { return v[0]*v[1] - 1; }                  // hiperbola
+        double (*Sist[2])(double*, int) = {f1, f2};
+        double a[2] = {-3, -3}, b[2] = {3, 3};      // rango: x en (-3,3), y en (-3,3)
+        int ns;
+        double **S = newton_raphson_sys_rango(Sist, 2, a, b, 12, 1e-12, 50, ns);   // 4 soluciones
+        print_mat(S, ns, 2, "Soluciones (x, y)");
+    */
+    num_sol = 0;
+    if (n < 1 || divisiones < 1) { print_error("newton_raphson_sys_rango: n >= 1 y divisiones >= 1"); return NULL; }
+    double total = pow((double)divisiones, (double)n);
+    if (total > 5e6) { print_error("newton_raphson_sys_rango: demasiadas semillas (divisiones^n > 5e6); usa newton_raphson_sys_rango_aleat"); return NULL; }
+    int ns = (int)(total + 0.5);
+    double **sem = zeros_mat(ns, n);
+    int *idx = new int[n];
+    for (int i = 0; i < n; i++) idx[i] = 0;
+    for (int s = 0; s < ns; s++) {
+        for (int i = 0; i < n; i++)
+            sem[s][i] = (divisiones == 1) ? 0.5 * (a[i] + b[i]) : a[i] + (b[i] - a[i]) * idx[i] / (divisiones - 1);
+        for (int i = n - 1; i >= 0; i--) {                     // contador en base 'divisiones'
+            idx[i]++;
+            if (idx[i] < divisiones) break;
+            idx[i] = 0;
+        }
+    }
+    delete[] idx;
+    double **S = newton_raphson_sys_filtrado(AF, n, a, b, sem, ns, tol, max_iter, num_sol);
+    del_mat(sem, ns);
+    return S;
+}
+
+// Newton-Raphson para sistemas: TODAS las soluciones en un rango (semillas aleatorias)
+// Descripción: Igual que newton_raphson_sys_rango, pero lanza Newton desde 'num_semillas' puntos aleatorios uniformes dentro del rango (en vez de una malla). Es la opcion para 3 o mas variables,
+// donde una malla tendria demasiados puntos. Usa rand(): llama antes a srand(semilla) si quieres otra secuencia. Devuelve num_sol x n ordenada por la primera variable (liberar con del_mat) o NULL.
+double** newton_raphson_sys_rango_aleat(double (*AF[])(double*, int), int n, double *a, double *b, int num_semillas, double tol, int max_iter, int &num_sol) {
+    /*
+    Ejemplo de uso:
+        // mismo sistema que newton_raphson_sys_rango, ahora con 200 semillas aleatorias
+        double a[2] = {0, 0}, b[2] = {3, 3};         // solo el primer cuadrante: 2 soluciones
+        int ns;
+        double **S = newton_raphson_sys_rango_aleat(Sist, 2, a, b, 200, 1e-12, 50, ns);   // ns = 2
+    */
+    num_sol = 0;
+    if (n < 1 || num_semillas < 1) { print_error("newton_raphson_sys_rango_aleat: n >= 1 y num_semillas >= 1"); return NULL; }
+    double **sem = zeros_mat(num_semillas, n);
+    for (int s = 0; s < num_semillas; s++)
+        for (int i = 0; i < n; i++)
+            sem[s][i] = a[i] + (b[i] - a[i]) * (rand() / (double)RAND_MAX);
+    double **S = newton_raphson_sys_filtrado(AF, n, a, b, sem, num_semillas, tol, max_iter, num_sol);
+    del_mat(sem, num_semillas);
+    return S;
+}
+
 // ----------------------------------------------------------------------------
 // MÉTODOS DE MINIMIZACIÓN: DESCENSO MÁS RÁPIDO (STEEPEST DESCENT)
 // ----------------------------------------------------------------------------
 
 // Helper: Calcula S(x) = sum(fi(x)^2) para convertir un sistema de ecuaciones en un problema de minimización
+// Descripción: Convierte un sistema de ecuaciones f_i(x) = 0 en un problema de minimizacion: devuelve S(x) = suma de f_i(x)^2, que vale 0 solo en una solucion del sistema. La usan los metodos de minimizacion (descenso mas rapido).
 double func_S_error(double (*AF[])(double*, int), double *x, int n) {
+    /*
+    Ejemplo de uso:
+        double f1(double *x, int n) { return x[0]*x[0] + x[1]*x[1] - 4; }
+        double f2(double *x, int n) { return x[0] - x[1]; }
+        double (*AF[2])(double*, int) = {f1, f2};
+        double x[2] = {1.0, 1.0};
+        double S = func_S_error(AF, x, 2);
+        // Resultado: S = 4   ((1+1-4)^2 + 0^2)
+    */
     double S = 0.0;
     for (int i = 0; i < n; i++) {
         double val = AF[i](x, n);
@@ -4516,6 +5516,21 @@ double trapecio_comp_func(double (*f)(double), double a, double b, int n) {
     return h * suma;
 }
 
+// Regla de 1/3 de Simpson compuesta (con función)
+// Descripción: Aplica Simpson 1/3 en grupos de 2 subintervalos (n debe ser par; si no lo es se sube al siguiente par). Error global O(h^4).
+double simpson13_comp_func(double (*f)(double), double a, double b, int n) {
+    /*
+    Ejemplo de uso:
+        double I = simpson13_comp_func(mi_func, 1.0, 3.0, 100);
+    */
+    if (n < 2) n = 2;
+    if (n % 2 != 0) n++;
+    double h = (b - a) / n;
+    double suma = f(a) + f(b);
+    for (int i = 1; i < n; i++) suma += ((i % 2 == 0) ? 2.0 : 4.0) * f(a + i * h);
+    return h / 3.0 * suma;
+}
+
 // Regla de 3/8 de Simpson compuesta (con función)
 // Descripción: Aplica Simpson 3/8 en grupos de 3 subintervalos (n debe ser multiplo de 3; si no lo es se sube al siguiente multiplo). Error global O(h^4).
 double simpson38_comp_func(double (*f)(double), double a, double b, int n) {
@@ -4576,6 +5591,136 @@ double simpson38_comp_vect(double *y, int n_puntos, double h) {
     double suma = y[0] + y[m];
     for (int i = 1; i < m; i++) suma += ((i % 3 == 0) ? 2.0 : 3.0) * y[i];
     return 3.0 * h / 8.0 * suma;
+}
+
+// Pesos de integración (integral del polinomio de Lagrange)
+// Descripción: Para los m nodos xs[0..m-1] (NO tienen que estar equiespaciados) calcula los pesos w[j] = integral de L_j(x) entre xs[0] y xs[m-1], de modo que
+// integral(f) ~ sum(w[j]*f(xs[j])). Con nodos equiespaciados reproduce trapecio (m=2), Simpson 1/3 (m=3), Simpson 3/8 (m=4), Boole (m=5)... 'w' debe tener m posiciones.
+void pesos_integ_lagrange(double *xs, int m, double *w) {
+    /*
+    Ejemplo de uso:
+        double xs[] = {0.0, 0.5, 1.0}, w[3];
+        pesos_integ_lagrange(xs, 3, w);     // w = {1/6, 4/6, 1/6}: Simpson 1/3 con h = 0.5
+    */
+    double H = xs[m - 1] - xs[0];
+    double *u = new double[m];
+    double *c = new double[m + 1];
+    for (int k = 0; k < m; k++) u[k] = (xs[k] - xs[0]) / H;          // nodos normalizados a [0,1]
+    for (int j = 0; j < m; j++) {
+        for (int i = 0; i <= m; i++) c[i] = 0.0;
+        c[0] = 1.0;
+        int deg = 0;
+        double den = 1.0;
+        for (int k = 0; k < m; k++) {                                // L_j(u) = prod (u - u_k)/(u_j - u_k)
+            if (k == j) continue;
+            for (int i = deg + 1; i >= 1; i--) c[i] = c[i - 1] - u[k] * c[i];
+            c[0] = -u[k] * c[0];
+            deg++;
+            den *= (u[j] - u[k]);
+        }
+        double integ = 0.0;
+        for (int i = 0; i <= deg; i++) integ += c[i] / (i + 1.0);
+        w[j] = H * integ / den;
+    }
+    delete[] u; delete[] c;
+}
+
+// Integral de datos tabulados y(x) con la precisión (grado) que elijas
+// Descripción: Integra y respecto a x con los n puntos (x[i], y[i]). x puede tener CUALQUIER espaciado (saltos, zonas densas y dispersas...) pero debe ser estrictamente creciente o decreciente.
+// 'grado' elige la precision: 1 = trapecio (O(h^2)), 2 = Simpson 1/3 (O(h^4)), 3 = Simpson 3/8 (O(h^4)), 4 = Boole (O(h^6)), hasta 6. Integra el polinomio de Lagrange de cada grupo de 'grado' subintervalos;
+// si sobran subintervalos, el ultimo grupo usa un grado menor. Con muestras ruidosas, un grado alto NO mejora el resultado.
+double integral_xy(double *x, double *y, int n, int grado) {
+    /*
+    Ejemplo de uso:
+        double x[] = {0.0, 0.1, 0.2, 0.4, 0.8, 1.6, 2.0};       // espaciado NO uniforme
+        double y[] = {0.0, 0.01, 0.04, 0.16, 0.64, 2.56, 4.0};   // y = x^2
+        double I1 = integral_xy(x, y, 7, 1);                      // trapecio (menos preciso)
+        double I2 = integral_xy(x, y, 7, 2);                      // Simpson 1/3: 2.66667 (exacto 8/3)
+    */
+    if (n < 2) { print_error_int("integral_xy: se necesitan al menos 2 puntos", n); return MC_NAN; }
+    if (grado < 1 || grado > 6) { print_error_int("integral_xy: el grado debe estar entre 1 y 6", grado); return MC_NAN; }
+    double sentido = (x[1] > x[0]) ? 1.0 : -1.0;
+    for (int i = 0; i < n - 1; i++)
+        if ((x[i + 1] - x[i]) * sentido <= 0.0) {
+            print_error("integral_xy: x debe ser estrictamente creciente o decreciente (sin puntos repetidos)");
+            return MC_NAN;
+        }
+    int m = n - 1;                              // subintervalos
+    if (grado > m) grado = m;                   // pocos datos: se usa el mayor grado posible
+    double w[8], suma = 0.0;
+    int i = 0;
+    while (i + grado <= m) {
+        pesos_integ_lagrange(x + i, grado + 1, w);
+        for (int j = 0; j <= grado; j++) suma += w[j] * y[i + j];
+        i += grado;
+    }
+    int r = m - i;                              // subintervalos restantes (grado menor)
+    if (r > 0) {
+        pesos_integ_lagrange(x + i, r + 1, w);
+        for (int j = 0; j <= r; j++) suma += w[j] * y[i + j];
+    }
+    return suma;
+}
+
+// Regla Trapezoidal de datos tabulados (y respecto a x)
+// Descripción: Integra y respecto a x sumando trapecios. x puede ser NO uniforme. Error O(h^2). Es integral_xy con grado 1.
+double trapecio_xy(double *x, double *y, int n) {
+    /*
+    Ejemplo de uso:
+        double x[] = {1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4};
+        double y[] = {6.050, 7.389, 9.025, 11.023, 13.464, 16.445, 20.086, 24.533, 29.964};   // e^x
+        double I = trapecio_xy(x, y, 9);   // 23.9944 (exacto: 23.9144)
+    */
+    return integral_xy(x, y, n, 1);
+}
+
+// Regla de 1/3 de Simpson de datos tabulados (y respecto a x)
+// Descripción: Integra y respecto a x con parabolas por grupos de 3 puntos. x puede ser NO uniforme. Error O(h^4). Si el numero de subintervalos es impar, el ultimo se integra con un grado menor (trapecio). Es integral_xy con grado 2.
+double simpson13_xy(double *x, double *y, int n) {
+    /*
+    Ejemplo de uso:
+        double x[] = {0.0, 0.5, 1.0, 1.5, 2.0};
+        double y[] = {0.0, 0.25, 1.0, 2.25, 4.0};     // y = x^2
+        double I = simpson13_xy(x, y, 5);             // 2.66667 (exacto 8/3)
+    */
+    return integral_xy(x, y, n, 2);
+}
+
+// Regla de 3/8 de Simpson de datos tabulados (y respecto a x)
+// Descripción: Integra y respecto a x con cubicas por grupos de 4 puntos. x puede ser NO uniforme. Error O(h^4). Si (n-1) no es multiplo de 3, el ultimo grupo usa un grado menor. Es integral_xy con grado 3.
+double simpson38_xy(double *x, double *y, int n) {
+    /*
+    Ejemplo de uso:
+        double x[] = {0, 1, 2, 3, 4, 5, 6};
+        double y[] = {0, 1, 8, 27, 64, 125, 216};     // y = x^3
+        double I = simpson38_xy(x, y, 7);             // 324 (exacto)
+    */
+    return integral_xy(x, y, n, 3);
+}
+
+// Integral de datos tabulados y(x) con la tolerancia que elijas
+// Descripción: Prueba grados crecientes (1 a 6) de integral_xy y se detiene cuando dos grados consecutivos difieren menos que 'tol'. Devuelve la integral, el grado usado y una estimacion del error (|I_g - I_(g-1)|).
+// Valido para datos suaves y sin ruido y con x NO uniforme. Si no se alcanza 'tol' avisa y devuelve el resultado de grado maximo.
+double integral_xy_tol(double *x, double *y, int n, double tol, int &grado_usado, double &err_est) {
+    /*
+    Ejemplo de uso:
+        int g; double err;
+        double I = integral_xy_tol(x, y, n, 1e-6, g, err);    // g = grado necesario, err = error estimado
+    */
+    double prev = integral_xy(x, y, n, 1);
+    grado_usado = 1;
+    err_est = MC_NAN;
+    if (isNaN(prev)) return MC_NAN;
+    int gmax = (n - 1 < 6) ? n - 1 : 6;
+    for (int g = 2; g <= gmax; g++) {
+        double cur = integral_xy(x, y, n, g);
+        err_est = fabs(cur - prev);
+        grado_usado = g;
+        if (err_est < tol) return cur;
+        prev = cur;
+    }
+    print_warning("integral_xy_tol: no se alcanzo la tolerancia con los datos disponibles (se devuelve el mejor resultado).");
+    return prev;
 }
 
 // Extrapolación de Richardson para integrales
@@ -4639,6 +5784,35 @@ double romberg_int(double (*f)(double), double a, double b, double tol, int N_ma
         print_warning("romberg_int alcanzo N_max sin cumplir la tolerancia.");
     del_mat(T, N_max + 1);
     return res;
+}
+
+// Helper de integral_adapt: Simpson adaptativo recursivo
+// Descripción: Compara Simpson en [a,b] con la suma de Simpson en cada mitad; si difieren mas que 15*tol divide el intervalo y repite (con tol/2). 'prof' limita la profundidad de la recursion.
+double simpson_adapt_rec(double (*f)(double), double a, double b, double fa, double fm, double fb, double S, double tol, int prof) {
+    /*
+    Ejemplo de uso: (se usa a traves de integral_adapt)
+    */
+    double m = 0.5 * (a + b);
+    double flm = f(0.5 * (a + m)), frm = f(0.5 * (m + b));
+    double Sl = (m - a) / 6.0 * (fa + 4.0 * flm + fm);
+    double Sr = (b - m) / 6.0 * (fm + 4.0 * frm + fb);
+    if (prof <= 0 || fabs(Sl + Sr - S) <= 15.0 * tol) return Sl + Sr + (Sl + Sr - S) / 15.0;
+    return simpson_adapt_rec(f, a, m, fa, flm, fm, Sl, 0.5 * tol, prof - 1)
+         + simpson_adapt_rec(f, m, b, fm, frm, fb, Sr, 0.5 * tol, prof - 1);
+}
+
+// Integral de una función con la tolerancia que elijas (Simpson adaptativo)
+// Descripción: Calcula la integral de f en [a,b] con un error aproximado menor que 'tol', refinando solo donde hace falta (mas puntos donde f cambia deprisa). Funciona con singularidades suaves como sqrt(x) en 0.
+// Condiciones: f continua y acotada en [a,b]. Para funciones muy oscilantes pide una tolerancia razonable (la recursion esta limitada a 40 niveles).
+double integral_adapt(double (*f)(double), double a, double b, double tol) {
+    /*
+    Ejemplo de uso:
+        double I = integral_adapt(sqrt, 0.0, 1.0, 1e-8);     // 0.666666667 (exacto 2/3)
+    */
+    if (tol <= 0.0) { print_error("integral_adapt: tol debe ser > 0"); return MC_NAN; }
+    double fa = f(a), fb = f(b), fm = f(0.5 * (a + b));
+    double S = (b - a) / 6.0 * (fa + 4.0 * fm + fb);
+    return simpson_adapt_rec(f, a, b, fa, fm, fb, S, tol, 40);
 }
 
 // Nodos y pesos de la cuadratura de Gauss-Legendre
@@ -4837,18 +6011,36 @@ double deriv_prog_2p(double (*f)(double), double x, double h) {
 // Derivada primera, diferencias regresivas de 2 puntos
 // Descripción: f'(x) ~ (f(x) - f(x-h))/h. Error O(h).
 double deriv_reg_2p(double (*f)(double), double x, double h) {
+    /*
+    Ejemplo de uso:
+        double f(double x) { return x * exp(x); }
+        double d = deriv_reg_2p(f, 2.0, 0.1);
+        // Resultado: d = 20.74913   (exacta: 22.167168)
+    */
     return (f(x) - f(x - h)) / h;
 }
 
 // Derivada primera, diferencias progresivas de 3 puntos
 // Descripción: f'(x) ~ (-3f(x) + 4f(x+h) - f(x+2h))/(2h). Error O(h^2).
 double deriv_prog_3p(double (*f)(double), double x, double h) {
+    /*
+    Ejemplo de uso:
+        double f(double x) { return x * exp(x); }
+        double d = deriv_prog_3p(f, 2.0, 0.1);
+        // Resultado: d = 22.0323   (exacta: 22.167168)
+    */
     return (-3.0 * f(x) + 4.0 * f(x + h) - f(x + 2.0 * h)) / (2.0 * h);
 }
 
 // Derivada primera, diferencias regresivas de 3 puntos
 // Descripción: f'(x) ~ (3f(x) - 4f(x-h) + f(x-2h))/(2h). Error O(h^2).
 double deriv_reg_3p(double (*f)(double), double x, double h) {
+    /*
+    Ejemplo de uso:
+        double f(double x) { return x * exp(x); }
+        double d = deriv_reg_3p(f, 2.0, 0.1);
+        // Resultado: d = 22.05452   (exacta: 22.167168)
+    */
     return deriv_prog_3p(f, x, -h);
 }
 
@@ -4865,18 +6057,36 @@ double deriv_cent_3p(double (*f)(double), double x, double h) {
 // Derivada primera, diferencias progresivas de 5 puntos
 // Descripción: f'(x) ~ (-25f(x) + 48f(x+h) - 36f(x+2h) + 16f(x+3h) - 3f(x+4h))/(12h). Error O(h^4).
 double deriv_prog_5p(double (*f)(double), double x, double h) {
+    /*
+    Ejemplo de uso:
+        double f(double x) { return x * exp(x); }
+        double d = deriv_prog_5p(f, 2.0, 0.1);
+        // Resultado: d = 22.16591   (exacta: 22.167168)
+    */
     return (-25.0 * f(x) + 48.0 * f(x + h) - 36.0 * f(x + 2.0 * h) + 16.0 * f(x + 3.0 * h) - 3.0 * f(x + 4.0 * h)) / (12.0 * h);
 }
 
 // Derivada primera, diferencias centrales de 5 puntos
 // Descripción: f'(x) ~ (f(x-2h) - 8f(x-h) + 8f(x+h) - f(x+2h))/(12h). Error O(h^4).
 double deriv_cent_5p(double (*f)(double), double x, double h) {
+    /*
+    Ejemplo de uso:
+        double f(double x) { return x * exp(x); }
+        double d = deriv_cent_5p(f, 2.0, 0.1);
+        // Resultado: d = 22.167   (exacta: 22.167168)
+    */
     return (f(x - 2.0 * h) - 8.0 * f(x - h) + 8.0 * f(x + h) - f(x + 2.0 * h)) / (12.0 * h);
 }
 
 // Derivada segunda, diferencias progresivas de 3 puntos
 // Descripción: f''(x) ~ (f(x) - 2f(x+h) + f(x+2h))/h^2. Error O(h).
 double deriv2_prog_3p(double (*f)(double), double x, double h) {
+    /*
+    Ejemplo de uso:
+        double f(double x) { return x * exp(x); }
+        double d = deriv2_prog_3p(f, 2.0, 0.1);
+        // Resultado: d = 33.52283   (exacta: 29.556224)
+    */
     return (f(x) - 2.0 * f(x + h) + f(x + 2.0 * h)) / (h * h);
 }
 
@@ -4893,12 +6103,24 @@ double deriv2_cent_3p(double (*f)(double), double x, double h) {
 // Derivada segunda, diferencias progresivas de 5 puntos
 // Descripción: f''(x) ~ (35f(x) - 104f(x+h) + 114f(x+2h) - 56f(x+3h) + 11f(x+4h))/(12h^2). Error O(h^3).
 double deriv2_prog_5p(double (*f)(double), double x, double h) {
+    /*
+    Ejemplo de uso:
+        double f(double x) { return x * exp(x); }
+        double d = deriv2_prog_5p(f, 2.0, 0.1);
+        // Resultado: d = 29.608   (exacta: 29.556224)
+    */
     return (35.0 * f(x) - 104.0 * f(x + h) + 114.0 * f(x + 2.0 * h) - 56.0 * f(x + 3.0 * h) + 11.0 * f(x + 4.0 * h)) / (12.0 * h * h);
 }
 
 // Derivada segunda, diferencias centrales de 5 puntos
 // Descripción: f''(x) ~ (-f(x-2h) + 16f(x-h) - 30f(x) + 16f(x+h) - f(x+2h))/(12h^2). Error O(h^4).
 double deriv2_cent_5p(double (*f)(double), double x, double h) {
+    /*
+    Ejemplo de uso:
+        double f(double x) { return x * exp(x); }
+        double d = deriv2_cent_5p(f, 2.0, 0.1);
+        // Resultado: d = 29.55616   (exacta: 29.556224)
+    */
     return (-f(x - 2.0 * h) + 16.0 * f(x - h) - 30.0 * f(x) + 16.0 * f(x + h) - f(x + 2.0 * h)) / (12.0 * h * h);
 }
 
@@ -4966,6 +6188,39 @@ double deriv_richardson(double (*f)(double), double x0, double h0, int N, int or
     return r;
 }
 
+// Derivada de una función con la tolerancia que elijas (Richardson)
+// Descripción: Calcula f'(x0) (orden = 1) o f''(x0) (orden = 2) refinando el paso (h0, h0/2, h0/4...) con extrapolacion de Richardson hasta que dos estimaciones consecutivas difieran menos que 'tol'.
+// Devuelve la derivada y, en 'err_est', el error estimado. Se detiene antes si el error de redondeo empieza a dominar (no se puede pedir una tolerancia por debajo de ~1e-10).
+double deriv_tol(double (*f)(double), double x0, double h0, double tol, int orden, double &err_est) {
+    /*
+    Ejemplo de uso:
+        double err;
+        double d = deriv_tol(exp, 1.0, 0.1, 1e-9, 1, err);     // e = 2.718281828 con error estimado err
+    */
+    if (orden != 1 && orden != 2) { print_error_int("deriv_tol: orden debe ser 1 o 2", orden); err_est = MC_NAN; return MC_NAN; }
+    const int NMAX = 10;
+    double T[NMAX][NMAX];
+    double h = h0, mejor = MC_NAN, mejor_e = 1e300;
+    for (int i = 0; i < NMAX; i++) {
+        T[i][0] = (orden == 1) ? deriv_cent_3p(f, x0, h) : deriv2_cent_3p(f, x0, h);
+        double p4 = 1.0;
+        for (int j = 1; j <= i; j++) {
+            p4 *= 4.0;
+            T[i][j] = (p4 * T[i][j - 1] - T[i - 1][j - 1]) / (p4 - 1.0);
+        }
+        if (i >= 1) {
+            double e = fabs(T[i][i] - T[i - 1][i - 1]);
+            if (e < tol) { err_est = e; return T[i][i]; }
+            if (e < mejor_e) { mejor_e = e; mejor = T[i][i]; }
+            else if (i >= 3) break;                         // el redondeo empieza a dominar
+        }
+        h /= 2.0;
+    }
+    print_warning("deriv_tol: no se alcanzo la tolerancia (se devuelve el mejor resultado).");
+    err_est = mejor_e;
+    return mejor;
+}
+
 // Estudio del error de la derivada en función de h (truncamiento frente a redondeo)
 // Descripción: Devuelve una matriz n x 3 con [h, derivada central de 3 puntos, |error|] para h = h0, h0/10, h0/100, ... Muestra que reducir h indefinidamente
 // empeora el resultado por el error de redondeo. 'exacta' es el valor exacto de f'(x0).
@@ -5030,6 +6285,113 @@ double* deriv2_vect(double *y, int n, double h) {
     d[n - 1] = (y[n - 1] - 2.0 * y[n - 2] + y[n - 3]) / (h * h);
     for (int i = 1; i < n - 1; i++) d[i] = (y[i - 1] - 2.0 * y[i] + y[i + 1]) / (h * h);
     return d;
+}
+
+// Derivada de datos tabulados y(x) con la precisión (nº de puntos) que elijas
+// Descripción: Deriva y respecto a x en cada punto con una formula de 'puntos' puntos (derivada del polinomio de Lagrange). x puede tener CUALQUIER espaciado pero debe ser estrictamente monotono.
+// orden = 1 o 2 (derivada primera o segunda); puntos = de orden+1 a 9. El error es O(h^(puntos-1)): 3 puntos -> O(h^2), 5 puntos -> O(h^4). Formulas centradas en el interior y laterales en los extremos.
+// Con datos con ruido, mas puntos NO siempre mejoran el resultado (la derivada amplifica el ruido).
+double* deriv_xy(double *x, double *y, int n, int orden, int puntos) {
+    /*
+    Ejemplo de uso:
+        double x[] = {0.0, 0.1, 0.2, 0.4, 0.7, 1.0};           // espaciado NO uniforme
+        double y[] = {0.0, 0.01, 0.04, 0.16, 0.49, 1.0};       // y = x^2
+        double *dy  = deriv_xy(x, y, 6, 1, 3);                  // dy/dx = 2x (exacta con 3 puntos)
+        double *d2y = deriv_xy(x, y, 6, 2, 3);                  // d2y/dx2 = 2
+    */
+    if (orden != 1 && orden != 2) { print_error_int("deriv_xy: orden debe ser 1 o 2", orden); return NULL; }
+    if (puntos < orden + 1 || puntos > 9) { print_error_int("deriv_xy: puntos debe estar entre orden+1 y 9", puntos); return NULL; }
+    if (n < puntos) { print_error_int("deriv_xy: hay menos datos que puntos de la formula", n); return NULL; }
+    double sentido = (x[1] > x[0]) ? 1.0 : -1.0;
+    for (int i = 0; i < n - 1; i++)
+        if ((x[i + 1] - x[i]) * sentido <= 0.0) {
+            print_error("deriv_xy: x debe ser estrictamente creciente o decreciente (sin puntos repetidos)");
+            return NULL;
+        }
+    double *d = new double[n];
+    double w[9];
+    for (int i = 0; i < n; i++) {
+        int s = i - (puntos - 1) / 2;                 // formula centrada si es posible
+        if (s < 0) s = 0;
+        if (s > n - puntos) s = n - puntos;
+        pesos_deriv_lagrange(x + s, puntos, x[i], orden, w);
+        double suma = 0.0;
+        for (int k = 0; k < puntos; k++) suma += w[k] * y[s + k];
+        d[i] = suma;
+    }
+    return d;
+}
+
+// Derivada primera de datos tabulados y(x), formulas de 3 puntos
+// Descripción: dy/dx con error O(h^2) en todos los puntos (centrales en el interior, laterales en los extremos). x puede ser NO uniforme. Es deriv_xy con orden 1 y 3 puntos. Necesita n >= 3.
+double* deriv_xy_3p(double *x, double *y, int n) {
+    /*
+    Ejemplo de uso:
+        double *dy = deriv_xy_3p(x, y, n);
+        print_vect(dy, n, "dy/dx");
+    */
+    return deriv_xy(x, y, n, 1, 3);
+}
+
+// Derivada primera de datos tabulados y(x), formulas de 5 puntos
+// Descripción: dy/dx con error O(h^4). x puede ser NO uniforme. Es deriv_xy con orden 1 y 5 puntos. Necesita n >= 5.
+double* deriv_xy_5p(double *x, double *y, int n) {
+    /*
+    Ejemplo de uso:
+        double *x = linspace(0.0, 1.0, 11);
+        double *y = sin_vect(x, 11);
+        double *dy = deriv_xy_5p(x, y, 11);       // ~ cos(x) con error O(h^4)
+    */
+    return deriv_xy(x, y, n, 1, 5);
+}
+
+// Derivada segunda de datos tabulados y(x), formulas de 3 puntos
+// Descripción: d2y/dx2 con error O(h^2) en el interior (O(h) en los extremos). x puede ser NO uniforme. Es deriv_xy con orden 2 y 3 puntos. Necesita n >= 3.
+double* deriv2_xy_3p(double *x, double *y, int n) {
+    /*
+    Ejemplo de uso:
+        double *d2y = deriv2_xy_3p(x, y, n);
+    */
+    return deriv_xy(x, y, n, 2, 3);
+}
+
+// Derivada segunda de datos tabulados y(x), formulas de 5 puntos
+// Descripción: d2y/dx2 con error O(h^4) en el interior. x puede ser NO uniforme. Es deriv_xy con orden 2 y 5 puntos. Necesita n >= 5.
+double* deriv2_xy_5p(double *x, double *y, int n) {
+    /*
+    Ejemplo de uso:
+        double *d2y = deriv2_xy_5p(x, y, n);       // ~ -sin(x) si y = sin(x)
+    */
+    return deriv_xy(x, y, n, 2, 5);
+}
+
+// Derivada de datos tabulados y(x) con la tolerancia que elijas
+// Descripción: Prueba formulas con mas y mas puntos (de orden+1 hasta 9) y se detiene cuando dos consecutivas difieren, en todos los puntos, menos que 'tol'. Devuelve la derivada, los puntos usados y el error estimado (max |d_p - d_(p-1)|).
+// Valido para datos suaves y sin ruido y con x NO uniforme. Si no se alcanza 'tol' avisa y devuelve el mejor resultado.
+double* deriv_xy_tol(double *x, double *y, int n, int orden, double tol, int &puntos_usados, double &err_max) {
+    /*
+    Ejemplo de uso:
+        int p; double err;
+        double *dy = deriv_xy_tol(x, y, n, 1, 1e-6, p, err);     // p = puntos necesarios
+    */
+    int p0 = orden + 1;
+    double *prev = deriv_xy(x, y, n, orden, p0);
+    puntos_usados = p0;
+    err_max = MC_NAN;
+    if (prev == NULL) return NULL;
+    int pmax = (n < 9) ? n : 9;
+    for (int p = p0 + 1; p <= pmax; p++) {
+        double *cur = deriv_xy(x, y, n, orden, p);
+        double e = 0.0;
+        for (int i = 0; i < n; i++) if (fabs(cur[i] - prev[i]) > e) e = fabs(cur[i] - prev[i]);
+        delete[] prev;
+        prev = cur;
+        puntos_usados = p;
+        err_max = e;
+        if (e < tol) return prev;
+    }
+    print_warning("deriv_xy_tol: no se alcanzo la tolerancia con los datos disponibles (se devuelve el mejor resultado).");
+    return prev;
 }
 
 // ============================================================================
@@ -5232,7 +6594,17 @@ double* rkf45_edo(double (*f)(double, double), double x0, double y0, double xf, 
 // ----------------------------------------------------------------------------
 
 // Helper: evalua el vector de derivadas dy_i/dt = AF[i](t, y, n)
+// Descripción: Funcion auxiliar de los metodos para sistemas de EDO's: evalua el vector de derivadas dy[i] = AF[i](t, y, n) para las n ecuaciones del sistema en el instante t.
 void eval_sys(double (*AF[])(double, double*, int), double t, double *y, int n, double *dy) {
+    /*
+    Ejemplo de uso:
+        double f1(double t, double *y, int n) { return y[1]; }          // y' = v
+        double f2(double t, double *y, int n) { return -y[0]; }         // v' = -y
+        double (*AF[2])(double, double*, int) = {f1, f2};
+        double y[2] = {1.0, 0.0}, dy[2];
+        eval_sys(AF, 0.0, y, 2, dy);
+        // Resultado: dy = [0, -1]
+    */
     for (int i = 0; i < n; i++) dy[i] = AF[i](t, y, n);
 }
 
@@ -5452,7 +6824,15 @@ double** rk4_orden_n(double (*f)(double, double*, int), double x0, double *y0, i
 
 // Helper: resuelve el IVP y'' = f(t,y,y'), y(a) = alfa, y'(a) = p con RK4 y devuelve y(b).
 // Si ys != NULL guarda la solucion en ys[0..n] (n pasos).
+// Descripción: Funcion auxiliar del metodo del disparo: resuelve el problema de valores iniciales y'' = f(t,y,y'), y(a) = alfa, y'(a) = p con Runge-Kutta 4 (n pasos) y devuelve y(b).
+// Si ys != NULL guarda tambien la solucion en ys[0..n].
 double ivp_rk4_2o(double (*f)(double, double, double), double a, double b, double alfa, double p, int n, double *ys) {
+    /*
+    Ejemplo de uso:
+        double f(double t, double y, double yp) { return -y; }          // y'' = -y
+        double yb = ivp_rk4_2o(f, 0.0, 1.5707963267949, 0.0, 1.0, 100, NULL);
+        // Resultado: yb = 1   (la solucion es y = sin(t), asi que y(pi/2) = 1)
+    */
     double h = (b - a) / n, t = a, y = alfa, v = p;
     if (ys != NULL) ys[0] = y;
     for (int i = 0; i < n; i++) {

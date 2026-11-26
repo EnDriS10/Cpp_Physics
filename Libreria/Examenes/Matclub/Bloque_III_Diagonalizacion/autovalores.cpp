@@ -234,7 +234,18 @@ double* prod_mat_vect(double **A, int f, int c, double *x, int n) {
 #define MC_FN_lu_forma1
 // Factorización LU (Forma 1 - Descomposición de Doolittle)
 // Las matrices L y U deben estar pre-creadas con zeros_mat(n, n)
+// Descripción: Factorizacion LU de Doolittle: A = L*U con unos en la diagonal de L (L triangular inferior, U triangular superior). Sirve para resolver varios sistemas con la misma A.
+// Condiciones: A cuadrada y con menores principales no nulos (si aparece un cero en la diagonal de U avisa: habria que pivotar). L y U se crean antes con zeros_mat(n, n).
 void lu_forma1(double **A, int n, double **L, double **U) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {2, 1, 1, 4, 3, 3, 8, 7, 9};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double **L = zeros_mat(3, 3), **U = zeros_mat(3, 3);
+        lu_forma1(A, 3, L, U);
+        // Resultado: L = [1, 0, 0; 2, 1, 0; 4, 3, 1] , U = [2, 1, 1; 0, 1, 1; 0, 0, 2]
+    */
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             if (i <= j) {
@@ -266,7 +277,18 @@ void lu_forma1(double **A, int n, double **L, double **U) {
 #ifndef MC_FN_gauss_solve
 #define MC_FN_gauss_solve
 // Eliminación de Gauss con pivoteo parcial
+// Descripción: Eliminacion gaussiana con pivoteo parcial (en cada columna toma el pivote de mayor valor absoluto) y sustitucion regresiva. No modifica A ni b.
+// Condiciones: A cuadrada y no singular (si es singular o casi, avisa y devuelve NULL). El pivoteo evita dividir por cero y reduce el error de redondeo.
 double* gauss_solve(double **A, double *b, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {4, -2, 1, -3, -1, 4, 1, -1, 3};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {15, 8, 13};
+        double *x = gauss_solve(A, b, 3);
+        // Resultado: x = [2, -2, 3]
+    */
     // Trabajamos sobre copias para no destruir las matrices originales
     double **M = coppy_mat(A, n, n);
     double *vb = copy_vect(b, n);
@@ -322,7 +344,16 @@ double* gauss_solve(double **A, double *b, int n) {
 #ifndef MC_FN_det_lu
 #define MC_FN_det_lu
 // 1B. Determinante usando Factorización LU (Doolittle)
+// Descripción: Determinante con la factorizacion LU de Doolittle: det(A) = producto de la diagonal de U (L tiene unos). Condicion: A cuadrada con menores principales no nulos. No modifica A.
 double det_lu(double **A, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {1, -1, 2, 3, 0, 1, 1, 0, 2};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double d = det_lu(A, 3);
+        // Resultado: d = 5
+    */
     double **L = zeros_mat(n, n);
     double **U = zeros_mat(n, n);
     
@@ -347,7 +378,16 @@ double det_lu(double **A, int n) {
 #ifndef MC_FN_inv_lu
 #define MC_FN_inv_lu
 // 2B. Inversa de una matriz usando Factorización LU
+// Descripción: Inversa resolviendo A*x = e_j (columnas de la identidad) con la factorizacion LU, que se calcula una sola vez. Condicion: A cuadrada con det(A) != 0 (si |det| < 1e-12 avisa y devuelve NULL).
 double** inv_lu(double **A, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {1, -1, 2, 3, 0, 1, 1, 0, 2};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double **Ai = inv_lu(A, 3);
+        // Resultado: Ai = [0, 0.4, -0.2; -1, 0, 1; 0, -0.2, 0.6]
+    */
     if (fabs(det_lu(A, n)) < 1e-12) {
         print_error("No tiene inversa. Matriz singular o determinante cero.");
         return NULL;

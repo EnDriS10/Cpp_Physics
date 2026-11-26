@@ -10,7 +10,7 @@
 // contra duplicados (#ifndef MC_FN_<nombre>).
 //
 // Funciones propias (3): seccion_aurea, func_S_error, steepest_descent_sys
-// Dependencias copiadas (7): MC_NAN, print_error, print_warning, intercambiar_elem, PHI, copy_vect, part_derv
+// Dependencias copiadas (10): MC_NAN, print_error, print_warning, print_error_int, intercambiar_elem, PHI, copy_vect, pesos_deriv_lagrange, part_derv_c, part_derv
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
 
@@ -55,6 +55,15 @@ void print_warning(const char* mensaje, const char* detalle = NULL) {
 }
 #endif // MC_FN_print_warning
 
+// (copiada de: mensajes)
+#ifndef MC_FN_print_error_int
+#define MC_FN_print_error_int
+// Error con un valor entero: "mensaje: valor"
+void print_error_int(const char* mensaje, int valor) {
+    cout << "[MATCLUB ERROR]: " << mensaje << ": " << valor << endl;
+}
+#endif // MC_FN_print_error_int
+
 // (copiada de: auxiliares)
 #ifndef MC_FN_intercambiar_elem
 #define MC_FN_intercambiar_elem
@@ -94,10 +103,79 @@ double* copy_vect(double *a, int n) {
 #endif // MC_FN_copy_vect
 
 // (copiada de: derivacion)
+#ifndef MC_FN_pesos_deriv_lagrange
+#define MC_FN_pesos_deriv_lagrange
+// Pesos de derivación (derivada del polinomio de Lagrange)
+// Descripción: Para los m nodos xs[0..m-1] calcula los pesos w[j] tales que f^(orden)(xt) ~ sum(w[j]*f(xs[j])), con orden = 1 o 2. Vale para nodos NO equiespaciados.
+// Con nodos equiespaciados reproduce las formulas clasicas (centrales, progresivas y regresivas). 'w' debe tener m posiciones.
+void pesos_deriv_lagrange(double *xs, int m, double xt, int orden, double *w) {
+    /*
+    Ejemplo de uso:
+        double xs[] = {1.9, 2.0, 2.1}, w[3];
+        pesos_deriv_lagrange(xs, 3, 2.0, 1, w);     // w = {-5, 0, 5}  (central: (f(x+h)-f(x-h))/(2h) con h = 0.1)
+    */
+    for (int j = 0; j < m; j++) {
+        double D = 1.0;
+        for (int k = 0; k < m; k++) if (k != j) D *= (xs[j] - xs[k]);
+        double s = 0.0;
+        for (int a = 0; a < m; a++) {
+            if (a == j) continue;
+            if (orden == 1) {
+                double p = 1.0;
+                for (int k = 0; k < m; k++) if (k != j && k != a) p *= (xt - xs[k]);
+                s += p;
+            } else {
+                for (int l = 0; l < m; l++) {
+                    if (l == j || l == a) continue;
+                    double p = 1.0;
+                    for (int k = 0; k < m; k++) if (k != j && k != a && k != l) p *= (xt - xs[k]);
+                    s += p;
+                }
+            }
+        }
+        w[j] = s / D;
+    }
+}
+#endif // MC_FN_pesos_deriv_lagrange
+
+// (copiada de: derivacion)
+#ifndef MC_FN_part_derv_c
+#define MC_FN_part_derv_c
+// Derivada parcial CENTRAL de alta precisión
+// Descripción: Calcula df/dx_j con diferencias centrales de 'puntos' puntos (3, 5, 7 o 9; error O(h^(puntos-1))). Mas puntos = mas precision pero mas evaluaciones de f (puntos-1).
+// Si h <= 0 elige automaticamente el paso que equilibra truncamiento y redondeo: h = eps^(1/puntos) * max(1, |x_j|). f debe ser suave (derivable) en el entorno del punto.
+double part_derv_c(double (*f)(double*, int), double *x, int n, int j, double h, int puntos) {
+    /*
+    Ejemplo de uso:
+        double mi_func(double *v, int n) { return v[0]*v[0]*v[1] + sin(v[1]); }
+        double punto[] = {2.0, 0.5};
+        double dfdx = part_derv_c(mi_func, punto, 2, 0, 0.0, 5);   // 2*x*y = 2.0 (paso automatico, 5 puntos)
+        double dfdy = part_derv_c(mi_func, punto, 2, 1, 1e-3, 7);  // x^2 + cos(y) = 4.8775826 (h = 1e-3, 7 puntos)
+    */
+    if (puntos < 3 || puntos > 9 || puntos % 2 == 0) { print_error_int("part_derv_c: puntos debe ser impar entre 3 y 9", puntos); return MC_NAN; }
+    if (j < 0 || j >= n) { print_error_int("part_derv_c: la variable j esta fuera de rango", j); return MC_NAN; }
+    if (h <= 0.0) h = pow(2.220446049250313e-16, 1.0 / puntos) * ((fabs(x[j]) > 1.0) ? fabs(x[j]) : 1.0);
+    int m = puntos / 2;
+    double xs[9], w[9];
+    for (int k = 0; k < puntos; k++) xs[k] = (double)(k - m);
+    pesos_deriv_lagrange(xs, puntos, 0.0, 1, w);          // pesos centrales para paso unidad
+    double *xh = copy_vect(x, n);
+    double suma = 0.0;
+    for (int k = 0; k < puntos; k++) {
+        if (k == m) continue;                              // el peso central es 0
+        xh[j] = x[j] + (k - m) * h;
+        suma += w[k] * f(xh, n);
+    }
+    delete[] xh;
+    return suma / h;
+}
+#endif // MC_FN_part_derv_c
+
+// (copiada de: derivacion)
 #ifndef MC_FN_part_derv
 #define MC_FN_part_derv
-// Derivada parcial numérica usando diferencias finitas progresivas.
-// Descripción: Calcula el cambio de la función 'f' respecto a la variable 'j' variando 'h'.
+// Derivada parcial numérica CENTRAL de 5 puntos (error O(h^4)).
+// Descripción: Calcula df/dx_j con diferencias centrales de 5 puntos y paso automatico (eps^(1/5)*max(1,|x_j|)). Para elegir el paso o el nº de puntos (3, 5, 7, 9) usa part_derv_c.
 double part_derv(double (*f)(double*, int), double *x, int n, int j) {
     /*
     Ejemplo de uso:
@@ -105,14 +183,7 @@ double part_derv(double (*f)(double*, int), double *x, int n, int j) {
         double punto[] = {2.0, 3.14};
         double df_dy = part_derv(mi_func, punto, 2, 1);
     */
-    double *xh = copy_vect(x, n);
-    double h = (fabs(x[j]) > 1e-8) ? 0.0001 * x[j] : 1e-5; 
-    
-    xh[j] = x[j] + h; 
-    double deriv = (f(xh, n) - f(x, n)) / h; // Fórmula de diferencias progresivas
-    
-    delete[] xh;
-    return deriv;
+    return part_derv_c(f, x, n, j, 0.0, 5);
 }
 #endif // MC_FN_part_derv
 
@@ -147,7 +218,17 @@ double seccion_aurea(double (*f)(double), double a, double b, double tol) {
 #ifndef MC_FN_func_S_error
 #define MC_FN_func_S_error
 // Helper: Calcula S(x) = sum(fi(x)^2) para convertir un sistema de ecuaciones en un problema de minimización
+// Descripción: Convierte un sistema de ecuaciones f_i(x) = 0 en un problema de minimizacion: devuelve S(x) = suma de f_i(x)^2, que vale 0 solo en una solucion del sistema. La usan los metodos de minimizacion (descenso mas rapido).
 double func_S_error(double (*AF[])(double*, int), double *x, int n) {
+    /*
+    Ejemplo de uso:
+        double f1(double *x, int n) { return x[0]*x[0] + x[1]*x[1] - 4; }
+        double f2(double *x, int n) { return x[0] - x[1]; }
+        double (*AF[2])(double*, int) = {f1, f2};
+        double x[2] = {1.0, 1.0};
+        double S = func_S_error(AF, x, 2);
+        // Resultado: S = 4   ((1+1-4)^2 + 0^2)
+    */
     double S = 0.0;
     for (int i = 0; i < n; i++) {
         double val = AF[i](x, n);

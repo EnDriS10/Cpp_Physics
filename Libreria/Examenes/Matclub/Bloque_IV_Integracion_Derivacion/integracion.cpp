@@ -2,15 +2,15 @@
 // MATCLUB-CPP  |  BLOQUE IV: INTEGRACION Y DERIVACION  |  IV.1
 // Integracion numerica
 // ============================================================================
-// Trapecio y Simpson (simples y compuestas), Richardson, Romberg, cuadratura de Gauss-Legendre e integrales multiples.
+// Trapecio y Simpson (simples y compuestas), datos tabulados x-y con espaciado no uniforme y precision elegible (grado o tolerancia), Richardson, Romberg, Simpson adaptativo, Gauss-Legendre e integrales multiples.
 //
 // ARCHIVO INDEPENDIENTE: no necesita ningun otro archivo de MATCLUB.
 // Uso:  #include "integracion.cpp"   (con la ruta donde lo tengas)
 // Se pueden incluir varios modulos a la vez: cada funcion esta protegida
 // contra duplicados (#ifndef MC_FN_<nombre>).
 //
-// Funciones propias (22): integral_def_func, integral_indef_func, int_vect, nc_trapecio, nc_simpson13, nc_simpson38, trapecio_comp_func, simpson38_comp_func, trapecio_comp_vect, simpson13_comp_vect, simpson38_comp_vect, richardson_int, romberg_mat, romberg_int, gauss_legendre_nodos, gauss_legendre_func, pesos_nc, integral_doble_func, integral_triple_func, integral_doble_mat, gauss_doble_func, gauss_triple_func
-// Dependencias copiadas (6): MC_NAN, print_warning, print_error_int, gen_mat, del_mat, zeros_mat
+// Funciones propias (31): integral_def_func, integral_indef_func, int_vect, nc_trapecio, nc_simpson13, nc_simpson38, trapecio_comp_func, simpson13_comp_func, simpson38_comp_func, trapecio_comp_vect, simpson13_comp_vect, simpson38_comp_vect, pesos_integ_lagrange, integral_xy, trapecio_xy, simpson13_xy, simpson38_xy, integral_xy_tol, richardson_int, romberg_mat, romberg_int, simpson_adapt_rec, integral_adapt, gauss_legendre_nodos, gauss_legendre_func, pesos_nc, integral_doble_func, integral_triple_func, integral_doble_mat, gauss_doble_func, gauss_triple_func
+// Dependencias copiadas (8): MC_NAN, print_error, print_warning, print_error_int, isNaN, gen_mat, del_mat, zeros_mat
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
 
@@ -35,6 +35,16 @@ const double MC_NAN = sqrt(-1.0);
 #endif // MC_FN_MC_NAN
 
 // (copiada de: mensajes)
+#ifndef MC_FN_print_error
+#define MC_FN_print_error
+void print_error(const char* mensaje, const char* detalle = NULL) {
+    cout << "[MATCLUB ERROR]: " << mensaje;
+    if (detalle != NULL) cout << " (" << detalle << ")";
+    cout << endl;
+}
+#endif // MC_FN_print_error
+
+// (copiada de: mensajes)
 #ifndef MC_FN_print_warning
 #define MC_FN_print_warning
 // Aviso: algo no fue perfecto pero el programa puede continuar
@@ -53,6 +63,14 @@ void print_error_int(const char* mensaje, int valor) {
     cout << "[MATCLUB ERROR]: " << mensaje << ": " << valor << endl;
 }
 #endif // MC_FN_print_error_int
+
+// (copiada de: auxiliares)
+#ifndef MC_FN_isNaN
+#define MC_FN_isNaN
+bool isNaN(double v) {
+    return v != v; // En norma IEEE 754, NaN es distinto de sí mismo
+}
+#endif // MC_FN_isNaN
 
 // (copiada de: matrices)
 #ifndef MC_FN_gen_mat
@@ -246,6 +264,24 @@ double trapecio_comp_func(double (*f)(double), double a, double b, int n) {
 }
 #endif // MC_FN_trapecio_comp_func
 
+#ifndef MC_FN_simpson13_comp_func
+#define MC_FN_simpson13_comp_func
+// Regla de 1/3 de Simpson compuesta (con función)
+// Descripción: Aplica Simpson 1/3 en grupos de 2 subintervalos (n debe ser par; si no lo es se sube al siguiente par). Error global O(h^4).
+double simpson13_comp_func(double (*f)(double), double a, double b, int n) {
+    /*
+    Ejemplo de uso:
+        double I = simpson13_comp_func(mi_func, 1.0, 3.0, 100);
+    */
+    if (n < 2) n = 2;
+    if (n % 2 != 0) n++;
+    double h = (b - a) / n;
+    double suma = f(a) + f(b);
+    for (int i = 1; i < n; i++) suma += ((i % 2 == 0) ? 2.0 : 4.0) * f(a + i * h);
+    return h / 3.0 * suma;
+}
+#endif // MC_FN_simpson13_comp_func
+
 #ifndef MC_FN_simpson38_comp_func
 #define MC_FN_simpson38_comp_func
 // Regla de 3/8 de Simpson compuesta (con función)
@@ -320,6 +356,154 @@ double simpson38_comp_vect(double *y, int n_puntos, double h) {
 }
 #endif // MC_FN_simpson38_comp_vect
 
+#ifndef MC_FN_pesos_integ_lagrange
+#define MC_FN_pesos_integ_lagrange
+// Pesos de integración (integral del polinomio de Lagrange)
+// Descripción: Para los m nodos xs[0..m-1] (NO tienen que estar equiespaciados) calcula los pesos w[j] = integral de L_j(x) entre xs[0] y xs[m-1], de modo que
+// integral(f) ~ sum(w[j]*f(xs[j])). Con nodos equiespaciados reproduce trapecio (m=2), Simpson 1/3 (m=3), Simpson 3/8 (m=4), Boole (m=5)... 'w' debe tener m posiciones.
+void pesos_integ_lagrange(double *xs, int m, double *w) {
+    /*
+    Ejemplo de uso:
+        double xs[] = {0.0, 0.5, 1.0}, w[3];
+        pesos_integ_lagrange(xs, 3, w);     // w = {1/6, 4/6, 1/6}: Simpson 1/3 con h = 0.5
+    */
+    double H = xs[m - 1] - xs[0];
+    double *u = new double[m];
+    double *c = new double[m + 1];
+    for (int k = 0; k < m; k++) u[k] = (xs[k] - xs[0]) / H;          // nodos normalizados a [0,1]
+    for (int j = 0; j < m; j++) {
+        for (int i = 0; i <= m; i++) c[i] = 0.0;
+        c[0] = 1.0;
+        int deg = 0;
+        double den = 1.0;
+        for (int k = 0; k < m; k++) {                                // L_j(u) = prod (u - u_k)/(u_j - u_k)
+            if (k == j) continue;
+            for (int i = deg + 1; i >= 1; i--) c[i] = c[i - 1] - u[k] * c[i];
+            c[0] = -u[k] * c[0];
+            deg++;
+            den *= (u[j] - u[k]);
+        }
+        double integ = 0.0;
+        for (int i = 0; i <= deg; i++) integ += c[i] / (i + 1.0);
+        w[j] = H * integ / den;
+    }
+    delete[] u; delete[] c;
+}
+#endif // MC_FN_pesos_integ_lagrange
+
+#ifndef MC_FN_integral_xy
+#define MC_FN_integral_xy
+// Integral de datos tabulados y(x) con la precisión (grado) que elijas
+// Descripción: Integra y respecto a x con los n puntos (x[i], y[i]). x puede tener CUALQUIER espaciado (saltos, zonas densas y dispersas...) pero debe ser estrictamente creciente o decreciente.
+// 'grado' elige la precision: 1 = trapecio (O(h^2)), 2 = Simpson 1/3 (O(h^4)), 3 = Simpson 3/8 (O(h^4)), 4 = Boole (O(h^6)), hasta 6. Integra el polinomio de Lagrange de cada grupo de 'grado' subintervalos;
+// si sobran subintervalos, el ultimo grupo usa un grado menor. Con muestras ruidosas, un grado alto NO mejora el resultado.
+double integral_xy(double *x, double *y, int n, int grado) {
+    /*
+    Ejemplo de uso:
+        double x[] = {0.0, 0.1, 0.2, 0.4, 0.8, 1.6, 2.0};       // espaciado NO uniforme
+        double y[] = {0.0, 0.01, 0.04, 0.16, 0.64, 2.56, 4.0};   // y = x^2
+        double I1 = integral_xy(x, y, 7, 1);                      // trapecio (menos preciso)
+        double I2 = integral_xy(x, y, 7, 2);                      // Simpson 1/3: 2.66667 (exacto 8/3)
+    */
+    if (n < 2) { print_error_int("integral_xy: se necesitan al menos 2 puntos", n); return MC_NAN; }
+    if (grado < 1 || grado > 6) { print_error_int("integral_xy: el grado debe estar entre 1 y 6", grado); return MC_NAN; }
+    double sentido = (x[1] > x[0]) ? 1.0 : -1.0;
+    for (int i = 0; i < n - 1; i++)
+        if ((x[i + 1] - x[i]) * sentido <= 0.0) {
+            print_error("integral_xy: x debe ser estrictamente creciente o decreciente (sin puntos repetidos)");
+            return MC_NAN;
+        }
+    int m = n - 1;                              // subintervalos
+    if (grado > m) grado = m;                   // pocos datos: se usa el mayor grado posible
+    double w[8], suma = 0.0;
+    int i = 0;
+    while (i + grado <= m) {
+        pesos_integ_lagrange(x + i, grado + 1, w);
+        for (int j = 0; j <= grado; j++) suma += w[j] * y[i + j];
+        i += grado;
+    }
+    int r = m - i;                              // subintervalos restantes (grado menor)
+    if (r > 0) {
+        pesos_integ_lagrange(x + i, r + 1, w);
+        for (int j = 0; j <= r; j++) suma += w[j] * y[i + j];
+    }
+    return suma;
+}
+#endif // MC_FN_integral_xy
+
+#ifndef MC_FN_trapecio_xy
+#define MC_FN_trapecio_xy
+// Regla Trapezoidal de datos tabulados (y respecto a x)
+// Descripción: Integra y respecto a x sumando trapecios. x puede ser NO uniforme. Error O(h^2). Es integral_xy con grado 1.
+double trapecio_xy(double *x, double *y, int n) {
+    /*
+    Ejemplo de uso:
+        double x[] = {1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4};
+        double y[] = {6.050, 7.389, 9.025, 11.023, 13.464, 16.445, 20.086, 24.533, 29.964};   // e^x
+        double I = trapecio_xy(x, y, 9);   // 23.9944 (exacto: 23.9144)
+    */
+    return integral_xy(x, y, n, 1);
+}
+#endif // MC_FN_trapecio_xy
+
+#ifndef MC_FN_simpson13_xy
+#define MC_FN_simpson13_xy
+// Regla de 1/3 de Simpson de datos tabulados (y respecto a x)
+// Descripción: Integra y respecto a x con parabolas por grupos de 3 puntos. x puede ser NO uniforme. Error O(h^4). Si el numero de subintervalos es impar, el ultimo se integra con un grado menor (trapecio). Es integral_xy con grado 2.
+double simpson13_xy(double *x, double *y, int n) {
+    /*
+    Ejemplo de uso:
+        double x[] = {0.0, 0.5, 1.0, 1.5, 2.0};
+        double y[] = {0.0, 0.25, 1.0, 2.25, 4.0};     // y = x^2
+        double I = simpson13_xy(x, y, 5);             // 2.66667 (exacto 8/3)
+    */
+    return integral_xy(x, y, n, 2);
+}
+#endif // MC_FN_simpson13_xy
+
+#ifndef MC_FN_simpson38_xy
+#define MC_FN_simpson38_xy
+// Regla de 3/8 de Simpson de datos tabulados (y respecto a x)
+// Descripción: Integra y respecto a x con cubicas por grupos de 4 puntos. x puede ser NO uniforme. Error O(h^4). Si (n-1) no es multiplo de 3, el ultimo grupo usa un grado menor. Es integral_xy con grado 3.
+double simpson38_xy(double *x, double *y, int n) {
+    /*
+    Ejemplo de uso:
+        double x[] = {0, 1, 2, 3, 4, 5, 6};
+        double y[] = {0, 1, 8, 27, 64, 125, 216};     // y = x^3
+        double I = simpson38_xy(x, y, 7);             // 324 (exacto)
+    */
+    return integral_xy(x, y, n, 3);
+}
+#endif // MC_FN_simpson38_xy
+
+#ifndef MC_FN_integral_xy_tol
+#define MC_FN_integral_xy_tol
+// Integral de datos tabulados y(x) con la tolerancia que elijas
+// Descripción: Prueba grados crecientes (1 a 6) de integral_xy y se detiene cuando dos grados consecutivos difieren menos que 'tol'. Devuelve la integral, el grado usado y una estimacion del error (|I_g - I_(g-1)|).
+// Valido para datos suaves y sin ruido y con x NO uniforme. Si no se alcanza 'tol' avisa y devuelve el resultado de grado maximo.
+double integral_xy_tol(double *x, double *y, int n, double tol, int &grado_usado, double &err_est) {
+    /*
+    Ejemplo de uso:
+        int g; double err;
+        double I = integral_xy_tol(x, y, n, 1e-6, g, err);    // g = grado necesario, err = error estimado
+    */
+    double prev = integral_xy(x, y, n, 1);
+    grado_usado = 1;
+    err_est = MC_NAN;
+    if (isNaN(prev)) return MC_NAN;
+    int gmax = (n - 1 < 6) ? n - 1 : 6;
+    for (int g = 2; g <= gmax; g++) {
+        double cur = integral_xy(x, y, n, g);
+        err_est = fabs(cur - prev);
+        grado_usado = g;
+        if (err_est < tol) return cur;
+        prev = cur;
+    }
+    print_warning("integral_xy_tol: no se alcanzo la tolerancia con los datos disponibles (se devuelve el mejor resultado).");
+    return prev;
+}
+#endif // MC_FN_integral_xy_tol
+
 #ifndef MC_FN_richardson_int
 #define MC_FN_richardson_int
 // Extrapolación de Richardson para integrales
@@ -391,6 +575,41 @@ double romberg_int(double (*f)(double), double a, double b, double tol, int N_ma
     return res;
 }
 #endif // MC_FN_romberg_int
+
+#ifndef MC_FN_simpson_adapt_rec
+#define MC_FN_simpson_adapt_rec
+// Helper de integral_adapt: Simpson adaptativo recursivo
+// Descripción: Compara Simpson en [a,b] con la suma de Simpson en cada mitad; si difieren mas que 15*tol divide el intervalo y repite (con tol/2). 'prof' limita la profundidad de la recursion.
+double simpson_adapt_rec(double (*f)(double), double a, double b, double fa, double fm, double fb, double S, double tol, int prof) {
+    /*
+    Ejemplo de uso: (se usa a traves de integral_adapt)
+    */
+    double m = 0.5 * (a + b);
+    double flm = f(0.5 * (a + m)), frm = f(0.5 * (m + b));
+    double Sl = (m - a) / 6.0 * (fa + 4.0 * flm + fm);
+    double Sr = (b - m) / 6.0 * (fm + 4.0 * frm + fb);
+    if (prof <= 0 || fabs(Sl + Sr - S) <= 15.0 * tol) return Sl + Sr + (Sl + Sr - S) / 15.0;
+    return simpson_adapt_rec(f, a, m, fa, flm, fm, Sl, 0.5 * tol, prof - 1)
+         + simpson_adapt_rec(f, m, b, fm, frm, fb, Sr, 0.5 * tol, prof - 1);
+}
+#endif // MC_FN_simpson_adapt_rec
+
+#ifndef MC_FN_integral_adapt
+#define MC_FN_integral_adapt
+// Integral de una función con la tolerancia que elijas (Simpson adaptativo)
+// Descripción: Calcula la integral de f en [a,b] con un error aproximado menor que 'tol', refinando solo donde hace falta (mas puntos donde f cambia deprisa). Funciona con singularidades suaves como sqrt(x) en 0.
+// Condiciones: f continua y acotada en [a,b]. Para funciones muy oscilantes pide una tolerancia razonable (la recursion esta limitada a 40 niveles).
+double integral_adapt(double (*f)(double), double a, double b, double tol) {
+    /*
+    Ejemplo de uso:
+        double I = integral_adapt(sqrt, 0.0, 1.0, 1e-8);     // 0.666666667 (exacto 2/3)
+    */
+    if (tol <= 0.0) { print_error("integral_adapt: tol debe ser > 0"); return MC_NAN; }
+    double fa = f(a), fb = f(b), fm = f(0.5 * (a + b));
+    double S = (b - a) / 6.0 * (fa + 4.0 * fm + fb);
+    return simpson_adapt_rec(f, a, b, fa, fm, fb, S, tol, 40);
+}
+#endif // MC_FN_integral_adapt
 
 #ifndef MC_FN_gauss_legendre_nodos
 #define MC_FN_gauss_legendre_nodos

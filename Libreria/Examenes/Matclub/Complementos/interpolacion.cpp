@@ -9,8 +9,8 @@
 // Se pueden incluir varios modulos a la vez: cada funcion esta protegida
 // contra duplicados (#ifndef MC_FN_<nombre>).
 //
-// Funciones propias (15): spline_coef, spline_eval, spline_interp, newton_coef, newton_eval, lagrange_coef, lagrange_val, vandermonde_mat, poly_interp_coef, dif_divididas_mat, newton_error_sig, interp_error_cota, dif_progresivas_mat, newton_prog_eval, newton_prog_error_sig
-// Dependencias copiadas (10): MC_NAN, print_error, intercambiar_elem, factorial, copy_vect, gen_mat, del_mat, coppy_mat, zeros_mat, gauss_solve
+// Funciones propias (18): spline_coef, spline_eval, spline_interp, newton_coef, newton_eval, lagrange_coef, lagrange_val, lagrange_base, lagrange_interp, newton_interp, vandermonde_mat, poly_interp_coef, dif_divididas_mat, newton_error_sig, interp_error_cota, dif_progresivas_mat, newton_prog_eval, newton_prog_error_sig
+// Dependencias copiadas (11): MC_NAN, print_error, print_error_int, intercambiar_elem, factorial, copy_vect, gen_mat, del_mat, coppy_mat, zeros_mat, gauss_solve
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
 
@@ -43,6 +43,15 @@ void print_error(const char* mensaje, const char* detalle = NULL) {
     cout << endl;
 }
 #endif // MC_FN_print_error
+
+// (copiada de: mensajes)
+#ifndef MC_FN_print_error_int
+#define MC_FN_print_error_int
+// Error con un valor entero: "mensaje: valor"
+void print_error_int(const char* mensaje, int valor) {
+    cout << "[MATCLUB ERROR]: " << mensaje << ": " << valor << endl;
+}
+#endif // MC_FN_print_error_int
 
 // (copiada de: auxiliares)
 #ifndef MC_FN_intercambiar_elem
@@ -155,7 +164,18 @@ double** zeros_mat(int f, int c) {
 #ifndef MC_FN_gauss_solve
 #define MC_FN_gauss_solve
 // Eliminación de Gauss con pivoteo parcial
+// Descripción: Eliminacion gaussiana con pivoteo parcial (en cada columna toma el pivote de mayor valor absoluto) y sustitucion regresiva. No modifica A ni b.
+// Condiciones: A cuadrada y no singular (si es singular o casi, avisa y devuelve NULL). El pivoteo evita dividir por cero y reduce el error de redondeo.
 double* gauss_solve(double **A, double *b, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {4, -2, 1, -3, -1, 4, 1, -1, 3};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {15, 8, 13};
+        double *x = gauss_solve(A, b, 3);
+        // Resultado: x = [2, -2, 3]
+    */
     // Trabajamos sobre copias para no destruir las matrices originales
     double **M = coppy_mat(A, n, n);
     double *vb = copy_vect(b, n);
@@ -215,7 +235,16 @@ double* gauss_solve(double **A, double *b, int n) {
 #define MC_FN_spline_coef
 // 7. ---------------- SPLINE CUBICA NATURAL ----------------
 // Devuelve las segundas derivadas M[0..n-1] (M[0]=M[n-1]=0). Liberar con del_vect.
+// Descripción: Calcula las segundas derivadas M[0..n-1] de la spline cubica NATURAL (M[0] = M[n-1] = 0) que pasa por los n puntos (x,y). Se calcula una vez y se usa con spline_eval.
+// Condiciones: n >= 3 y x estrictamente creciente. Liberar con delete[] (o del_vect).
 double* spline_coef(double *x, double *y, int n) {
+    /*
+    Ejemplo de uso:
+        double x[5] = {0, 1, 2, 3, 4};
+        double y[5] = {0, 1, 4, 9, 16};          // y = x^2
+        double *M = spline_coef(x, y, 5);
+        // Resultado: M = [0, 2.571429, 1.714286, 2.571429, 0]
+    */
     if (n < 3) { print_error("spline_coef: se necesitan al menos 3 puntos"); return NULL; }
     double *M = new double[n];
     int m = n - 2;
@@ -243,7 +272,16 @@ double* spline_coef(double *x, double *y, int n) {
 #ifndef MC_FN_spline_eval
 #define MC_FN_spline_eval
 // x debe estar ordenado de menor a mayor. Fuera de [x0, xn-1] extrapola con el tramo extremo.
+// Descripción: Evalua en xi la spline cubica natural a partir de las segundas derivadas M (de spline_coef). Condiciones: x creciente; fuera de [x0, x(n-1)] extrapola con el tramo extremo (poco fiable).
 double spline_eval(double *x, double *y, double *M, int n, double xi) {
+    /*
+    Ejemplo de uso:
+        double x[5] = {0, 1, 2, 3, 4};
+        double y[5] = {0, 1, 4, 9, 16};          // y = x^2
+        double *M = spline_coef(x, y, 5);
+        double v = spline_eval(x, y, M, 5, 2.5);
+        // Resultado: v = 6.232143
+    */
     int k = 0;
     while (k < n - 2 && xi > x[k + 1]) k++;
     double h = x[k + 1] - x[k];
@@ -254,7 +292,16 @@ double spline_eval(double *x, double *y, double *M, int n, double xi) {
 
 #ifndef MC_FN_spline_interp
 #define MC_FN_spline_interp
+// Spline cúbica natural en una sola llamada
+// Descripción: Spline cubica natural en una sola llamada (calcula M, evalua en xi y libera memoria). Si vas a evaluar muchos puntos usa spline_coef + spline_eval. Condiciones: n >= 3 y x creciente.
 double spline_interp(double *x, double *y, int n, double xi) {
+    /*
+    Ejemplo de uso:
+        double x[5] = {0, 1, 2, 3, 4};
+        double y[5] = {0, 1, 4, 9, 16};          // y = x^2
+        double v = spline_interp(x, y, 5, 2.5);
+        // Resultado: v = 6.232143   (exacto para y = x^2: 6.25 (la spline natural impone M = 0 en los extremos))
+    */
     double *M = spline_coef(x, y, n);
     if (M == NULL) return MC_NAN;
     double r = spline_eval(x, y, M, n, xi);
@@ -267,7 +314,16 @@ double spline_interp(double *x, double *y, int n, double xi) {
 #define MC_FN_newton_coef
 // 8. ---------------- NEWTON (diferencias divididas) ----------------
 // Devuelve c[0..n-1] = f[x0], f[x0,x1], ... Liberar con del_vect.
+// Descripción: Coeficientes del polinomio de Newton (diferencias divididas f[x0], f[x0,x1], ...). Se calculan una vez y permiten evaluar el polinomio con newton_eval o AÑADIR un punto sin rehacer los calculos anteriores.
+// Condiciones: nodos x distintos (no hace falta que esten ordenados ni equiespaciados). Liberar con delete[].
 double* newton_coef(double *x, double *y, int n) {
+    /*
+    Ejemplo de uso:
+        double x[4] = {3.2, 2.7, 1.0, 4.8};
+        double y[4] = {22.0, 17.8, 14.2, 38.3};
+        double *c = newton_coef(x, y, 4);
+        // Resultado: c = [22, 8.4, 2.855615, -0.5274801]
+    */
     if (n < 1) { print_error("newton_coef: n debe ser >= 1"); return NULL; }
     double *c = copy_vect(y, n);
     for (int j = 1; j < n; j++) {
@@ -284,7 +340,16 @@ double* newton_coef(double *x, double *y, int n) {
 #ifndef MC_FN_newton_eval
 #define MC_FN_newton_eval
 // Evalua el polinomio de Newton en xi (forma anidada tipo Horner)
+// Descripción: Evalua en xi el polinomio de Newton con la forma anidada (tipo Horner) a partir de los coeficientes c de newton_coef y los nodos x. Es el mismo polinomio que el de Lagrange (el polinomio interpolador es unico).
 double newton_eval(double *x, double *c, int n, double xi) {
+    /*
+    Ejemplo de uso:
+        double x[4] = {3.2, 2.7, 1.0, 4.8};
+        double y[4] = {22.0, 17.8, 14.2, 38.3};
+        double *c = newton_coef(x, y, 4);
+        double v = newton_eval(x, c, 4, 3.0);
+        // Resultado: v = 20.21196
+    */
     double r = c[n - 1];
     for (int i = n - 2; i >= 0; i--) r = r * (xi - x[i]) + c[i];
     return r;
@@ -295,7 +360,15 @@ double newton_eval(double *x, double *c, int n, double xi) {
 #define MC_FN_lagrange_coef
 // 9. ---------------- LAGRANGE (forma baricentrica) ----------------
 // Devuelve los pesos w[i] = 1 / prod_{j!=i} (x[i]-x[j]). Liberar con del_vect.
+// Descripción: Pesos baricentricos w[i] = 1 / prod_{j!=i}(x_i - x_j) del polinomio de Lagrange. Se calculan una vez y permiten evaluar con lagrange_val en O(n) por punto. Condicion: nodos x distintos. Liberar con delete[].
 double* lagrange_coef(double *x, int n) {
+    /*
+    Ejemplo de uso:
+        double x[4] = {3.2, 2.7, 1.0, 4.8};
+        double y[4] = {22.0, 17.8, 14.2, 38.3};
+        double *w = lagrange_coef(x, 4);
+        // Resultado: w = [-0.5681818, 0.5602241, -0.07036307, 0.0783208]
+    */
     if (n < 1) { print_error("lagrange_coef: n debe ser >= 1"); return NULL; }
     double *w = new double[n];
     for (int i = 0; i < n; i++) {
@@ -315,7 +388,16 @@ double* lagrange_coef(double *x, int n) {
 #ifndef MC_FN_lagrange_val
 #define MC_FN_lagrange_val
 // Evalua el polinomio de Lagrange en xi con los pesos w (O(n) por punto)
+// Descripción: Evalua en xi el polinomio de Lagrange (forma baricentrica) con los pesos w de lagrange_coef. Si xi coincide con un nodo devuelve directamente su y. Mismo polinomio que newton_eval.
 double lagrange_val(double *x, double *y, double *w, int n, double xi) {
+    /*
+    Ejemplo de uso:
+        double x[4] = {3.2, 2.7, 1.0, 4.8};
+        double y[4] = {22.0, 17.8, 14.2, 38.3};
+        double *w = lagrange_coef(x, 4);
+        double v = lagrange_val(x, y, w, 4, 3.0);
+        // Resultado: v = 20.21196
+    */
     double num = 0.0, den = 0.0;
     for (int i = 0; i < n; i++) {
         double d = xi - x[i];
@@ -327,6 +409,64 @@ double lagrange_val(double *x, double *y, double *w, int n, double xi) {
     return num / den;
 }
 #endif // MC_FN_lagrange_val
+
+#ifndef MC_FN_lagrange_base
+#define MC_FN_lagrange_base
+// Polinomio base de Lagrange L_i(x)
+// Descripción: Evalua L_i(xi) = prod_{j!=i} (xi - x_j)/(x_i - x_j), el polinomio de grado n-1 que vale 1 en x_i y 0 en el resto de nodos. El polinomio interpolador es P(x) = sum y_i*L_i(x).
+double lagrange_base(double *x, int n, int i, double xi) {
+    /*
+    Ejemplo de uso:
+        double x[] = {3.2, 2.7, 1.0, 4.8};
+        double L0 = lagrange_base(x, 4, 0, 3.2);    // 1 (en su propio nodo)
+        double L1 = lagrange_base(x, 4, 1, 3.2);    // 0 (en otro nodo)
+    */
+    if (i < 0 || i >= n) { print_error_int("lagrange_base: el indice i esta fuera de rango", i); return MC_NAN; }
+    double L = 1.0;
+    for (int j = 0; j < n; j++) {
+        if (j == i) continue;
+        if (x[i] == x[j]) { print_error("lagrange_base: hay nodos x repetidos"); return MC_NAN; }
+        L *= (xi - x[j]) / (x[i] - x[j]);
+    }
+    return L;
+}
+#endif // MC_FN_lagrange_base
+
+#ifndef MC_FN_lagrange_interp
+#define MC_FN_lagrange_interp
+// Interpolación de Lagrange en una sola llamada
+// Descripción: Evalua en xi el polinomio de Lagrange que pasa por los n puntos (x,y) (calcula los pesos, evalua y libera memoria). Si vas a evaluar muchos puntos usa lagrange_coef + lagrange_val.
+double lagrange_interp(double *x, double *y, int n, double xi) {
+    /*
+    Ejemplo de uso:
+        double x[] = {3.2, 2.7, 1.0, 4.8}, y[] = {22.0, 17.8, 14.2, 38.3};
+        double v = lagrange_interp(x, y, 4, 3.0);   // 20.212
+    */
+    double *w = lagrange_coef(x, n);
+    if (w == NULL) return MC_NAN;
+    double r = lagrange_val(x, y, w, n, xi);
+    delete[] w;
+    return r;
+}
+#endif // MC_FN_lagrange_interp
+
+#ifndef MC_FN_newton_interp
+#define MC_FN_newton_interp
+// Interpolación de Newton en una sola llamada
+// Descripción: Evalua en xi el polinomio de Newton (diferencias divididas) que pasa por los n puntos (x,y). Si vas a evaluar muchos puntos usa newton_coef + newton_eval.
+double newton_interp(double *x, double *y, int n, double xi) {
+    /*
+    Ejemplo de uso:
+        double x[] = {3.2, 2.7, 1.0, 4.8}, y[] = {22.0, 17.8, 14.2, 38.3};
+        double v = newton_interp(x, y, 4, 3.0);     // 20.212
+    */
+    double *c = newton_coef(x, y, n);
+    if (c == NULL) return MC_NAN;
+    double r = newton_eval(x, c, n, xi);
+    delete[] c;
+    return r;
+}
+#endif // MC_FN_newton_interp
 
 #ifndef MC_FN_vandermonde_mat
 #define MC_FN_vandermonde_mat

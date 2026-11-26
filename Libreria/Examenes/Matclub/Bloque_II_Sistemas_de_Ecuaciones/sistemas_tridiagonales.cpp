@@ -59,7 +59,18 @@ void print_error_int(const char* mensaje, int valor) {
 
 // Se le pasa la matriz completa A y el vector independiente f.
 // La funcion extrae las diagonales automaticamente.
+// Descripción: Resuelve A*x = f con A TRIDIAGONAL (algoritmo de Thomas: LU + sustitucion), extrayendo las tres diagonales de la matriz completa. Necesita solo ~8n operaciones en vez de n^3.
+// Condiciones: A tridiagonal (todo lo demas ceros) y sin ceros en los pivotes (se cumple si es diagonalmente dominante). Si no quieres construir la matriz, usa tridiag_vect_solve.
 double* tridiag_solve(double **A, double *f, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {2, -1, 0, -1, 2, -1, 0, -1, 2};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double f[3] = {1, 0, 1};
+        double *x = tridiag_solve(A, f, 3);
+        // Resultado: x = [1, 1, 1]
+    */
     // 1. Extraccion de las diagonales de la matriz A
     double *a = new double[n - 1]; // Diagonal inferior
     double *b = new double[n];     // Diagonal principal

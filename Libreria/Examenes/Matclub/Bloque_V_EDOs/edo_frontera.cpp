@@ -92,7 +92,15 @@ double* tridiag_vect_solve(double *a, double *b, double *c, double *f, int n) {
 #define MC_FN_ivp_rk4_2o
 // Helper: resuelve el IVP y'' = f(t,y,y'), y(a) = alfa, y'(a) = p con RK4 y devuelve y(b).
 // Si ys != NULL guarda la solucion en ys[0..n] (n pasos).
+// Descripción: Funcion auxiliar del metodo del disparo: resuelve el problema de valores iniciales y'' = f(t,y,y'), y(a) = alfa, y'(a) = p con Runge-Kutta 4 (n pasos) y devuelve y(b).
+// Si ys != NULL guarda tambien la solucion en ys[0..n].
 double ivp_rk4_2o(double (*f)(double, double, double), double a, double b, double alfa, double p, int n, double *ys) {
+    /*
+    Ejemplo de uso:
+        double f(double t, double y, double yp) { return -y; }          // y'' = -y
+        double yb = ivp_rk4_2o(f, 0.0, 1.5707963267949, 0.0, 1.0, 100, NULL);
+        // Resultado: yb = 1   (la solucion es y = sin(t), asi que y(pi/2) = 1)
+    */
     double h = (b - a) / n, t = a, y = alfa, v = p;
     if (ys != NULL) ys[0] = y;
     for (int i = 0; i < n; i++) {

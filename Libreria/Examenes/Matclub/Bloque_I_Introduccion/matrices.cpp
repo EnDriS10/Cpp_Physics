@@ -9,7 +9,7 @@
 // Se pueden incluir varios modulos a la vez: cada funcion esta protegida
 // contra duplicados (#ifndef MC_FN_<nombre>).
 //
-// Funciones propias (43): gen_mat, del_mat, prod_mat, input_mat, print_mat, coppy_mat, transpose_mat, zeros_mat, ones_mat, eye_mat, prod_esc_mat, trace_mat, get_row_mat, get_col_mat, suma_mat, resta_mat, prodeach_mat, sub_mat, horzcat_mat, vertcat_mat, flatten_mat, funeach_mat, apply_scalar_vect, apply_scalar_mat, remove_row_col_mat, is_symmetric_mat, swap_rows_mat, swap_cols_mat, find_val_mat, find_gt_mat, sum_all_mat, prod_all_mat, max_mat, max_abs_mat, min_mat, rand_mat, randi_mat, randn_mat, clamp_mat, reshape_mat, diag_mat, get_diag_mat, prod_mat_vect
+// Funciones propias (44): gen_mat, del_mat, mat_from_arr, prod_mat, input_mat, print_mat, coppy_mat, transpose_mat, zeros_mat, ones_mat, eye_mat, prod_esc_mat, trace_mat, get_row_mat, get_col_mat, suma_mat, resta_mat, prodeach_mat, sub_mat, horzcat_mat, vertcat_mat, flatten_mat, funeach_mat, apply_scalar_vect, apply_scalar_mat, remove_row_col_mat, is_symmetric_mat, swap_rows_mat, swap_cols_mat, find_val_mat, find_gt_mat, sum_all_mat, prod_all_mat, max_mat, max_abs_mat, min_mat, rand_mat, randi_mat, randn_mat, clamp_mat, reshape_mat, diag_mat, get_diag_mat, prod_mat_vect
 // Dependencias copiadas (2): print_error, print_error_dim
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
@@ -82,6 +82,28 @@ void del_mat(double **M, int f){
     delete [] M;
 }
 #endif // MC_FN_del_mat
+
+#ifndef MC_FN_mat_from_arr
+#define MC_FN_mat_from_arr
+// Matriz a partir de un array plano (por filas)
+// Descripción: Crea una matriz f x c (new) copiando los f*c valores del array v en orden de filas: v[i*c + j] pasa a M[i][j]. Liberar con del_mat(M, f).
+double** mat_from_arr(double *v, int f, int c) {
+    /*
+    Ejemplo de uso:
+        double aux[] = { 2, 3, 5, 7 };
+        double **A = mat_from_arr(aux, 2, 2);
+        print_mat(A, 2, 2, "A");
+        del_mat(A, 2);
+    */
+    double **M = gen_mat(M, f, c);
+    for (int i = 0; i < f; i++) {
+        for (int j = 0; j < c; j++) {
+            M[i][j] = v[i * c + j];
+        }
+    }
+    return M;
+}
+#endif // MC_FN_mat_from_arr
 
 #ifndef MC_FN_prod_mat
 #define MC_FN_prod_mat

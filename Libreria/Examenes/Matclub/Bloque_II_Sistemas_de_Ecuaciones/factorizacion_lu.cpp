@@ -96,7 +96,18 @@ double** zeros_mat(int f, int c) {
 #define MC_FN_lu_forma1
 // Factorización LU (Forma 1 - Descomposición de Doolittle)
 // Las matrices L y U deben estar pre-creadas con zeros_mat(n, n)
+// Descripción: Factorizacion LU de Doolittle: A = L*U con unos en la diagonal de L (L triangular inferior, U triangular superior). Sirve para resolver varios sistemas con la misma A.
+// Condiciones: A cuadrada y con menores principales no nulos (si aparece un cero en la diagonal de U avisa: habria que pivotar). L y U se crean antes con zeros_mat(n, n).
 void lu_forma1(double **A, int n, double **L, double **U) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {2, 1, 1, 4, 3, 3, 8, 7, 9};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double **L = zeros_mat(3, 3), **U = zeros_mat(3, 3);
+        lu_forma1(A, 3, L, U);
+        // Resultado: L = [1, 0, 0; 2, 1, 0; 4, 3, 1] , U = [2, 1, 1; 0, 1, 1; 0, 0, 2]
+    */
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             if (i <= j) {
@@ -127,7 +138,17 @@ void lu_forma1(double **A, int n, double **L, double **U) {
 #ifndef MC_FN_lu_forma1_sol
 #define MC_FN_lu_forma1_sol
 // Resuelve Ax = b usando LU Forma 1
+// Descripción: Resuelve A*x = b con la factorizacion de Doolittle: A = L*U, luego L*z = b (sustitucion progresiva) y U*x = z (sustitucion regresiva). Mismas condiciones que lu_forma1.
 double* lu_forma1_sol(double **A, double *b, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {2, 1, 1, 4, 3, 3, 8, 7, 9};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {4, 10, 24};
+        double *x = lu_forma1_sol(A, b, 3);
+        // Resultado: x = [1, 1, 1]
+    */
     double **L = zeros_mat(n, n);
     double **U = zeros_mat(n, n);
     double *z = new double[n];
@@ -161,7 +182,17 @@ double* lu_forma1_sol(double **A, double *b, int n) {
 #define MC_FN_lu_forma2
 // Factorización LU (Forma 2 - Alternando fila U y columna L)
 // Las matrices L y U deben estar pre-creadas con zeros_mat(n, n)
+// Descripción: Factorizacion LU de Crout: A = L*U con unos en la diagonal de U (se calcula alternando una fila de U y una columna de L). Mismas condiciones que lu_forma1; L y U se crean antes con zeros_mat(n, n).
 void lu_forma2(double **A, int n, double **L, double **U) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {2, 1, 1, 4, 3, 3, 8, 7, 9};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double **L = zeros_mat(3, 3), **U = zeros_mat(3, 3);
+        lu_forma2(A, 3, L, U);
+        // Resultado: L = [1, 0, 0; 2, 1, 0; 4, 3, 1] , U = [2, 1, 1; 0, 1, 1; 0, 0, 2]
+    */
     for (int i = 0; i < n; i++) {
         // Obtención de una fila de U
         for (int j = i; j < n; j++) {
@@ -191,7 +222,17 @@ void lu_forma2(double **A, int n, double **L, double **U) {
 #ifndef MC_FN_lu_forma2_sol
 #define MC_FN_lu_forma2_sol
 // Resuelve Ax = b usando LU Forma 2
+// Descripción: Resuelve A*x = b con la factorizacion de Crout (unos en la diagonal de U). Mismas condiciones que lu_forma1.
 double* lu_forma2_sol(double **A, double *b, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {2, 1, 1, 4, 3, 3, 8, 7, 9};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {4, 10, 24};
+        double *x = lu_forma2_sol(A, b, 3);
+        // Resultado: x = [1, 1, 1]
+    */
     double **L = zeros_mat(n, n);
     double **U = zeros_mat(n, n);
     double *z = new double[n];

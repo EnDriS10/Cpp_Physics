@@ -259,7 +259,14 @@ double* sort_vect(double *a, int n) {
 #ifndef MC_FN_median_vect
 #define MC_FN_median_vect
 // Calcula la mediana del vector (el valor central)
+// Descripción: Mediana del vector: el valor central de los datos ordenados (media de los dos centrales si n es par). No modifica el vector original.
 double median_vect(double *a, int n) { 
+    /*
+    Ejemplo de uso:
+        double a[5] = {5, 1, 4, 2, 3};
+        double m = median_vect(a, 5);
+        // Resultado: m = 3
+    */
     // Ordenamos el vector usando tu funcion Introsort
     double *sorted = sort_vect(a, n); 
     double med = 0.0;
@@ -465,7 +472,14 @@ double percentil_vect(double *a, int n, double p) {
 #ifndef MC_FN_movmean_vect
 #define MC_FN_movmean_vect
 // Media movil con ventana w (centrada; en los bordes la ventana se recorta)
+// Descripción: Media movil de ventana w: cada elemento es la media de los datos de su entorno (centrada; en los bordes la ventana se recorta). Sirve para suavizar ruido. Condicion: w >= 1.
 double* movmean_vect(double *a, int n, int w) {
+    /*
+    Ejemplo de uso:
+        double a[6] = {1, 2, 3, 4, 5, 6};
+        double *m = movmean_vect(a, 6, 3);
+        // Resultado: m = [1.5, 2, 3, 4, 5, 5.5]
+    */
     if (w < 1) {
         print_error("movmean_vect: la ventana debe ser >= 1");
         return NULL;

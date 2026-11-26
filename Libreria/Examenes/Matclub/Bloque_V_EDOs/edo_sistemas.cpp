@@ -116,7 +116,17 @@ double** zeros_mat(int f, int c) {
 #ifndef MC_FN_eval_sys
 #define MC_FN_eval_sys
 // Helper: evalua el vector de derivadas dy_i/dt = AF[i](t, y, n)
+// Descripción: Funcion auxiliar de los metodos para sistemas de EDO's: evalua el vector de derivadas dy[i] = AF[i](t, y, n) para las n ecuaciones del sistema en el instante t.
 void eval_sys(double (*AF[])(double, double*, int), double t, double *y, int n, double *dy) {
+    /*
+    Ejemplo de uso:
+        double f1(double t, double *y, int n) { return y[1]; }          // y' = v
+        double f2(double t, double *y, int n) { return -y[0]; }         // v' = -y
+        double (*AF[2])(double, double*, int) = {f1, f2};
+        double y[2] = {1.0, 0.0}, dy[2];
+        eval_sys(AF, 0.0, y, 2, dy);
+        // Resultado: dy = [0, -1]
+    */
     for (int i = 0; i < n; i++) dy[i] = AF[i](t, y, n);
 }
 #endif // MC_FN_eval_sys

@@ -180,7 +180,16 @@ double** coppy_mat(double **M, int f, int c) {
 #ifndef MC_FN_check_dominancia
 #define MC_FN_check_dominancia
 /// Función Auxiliar: Comprueba estrictamente si una matriz es diagonalmente dominante
+// Descripción: Comprueba si A es diagonalmente dominante por filas: |a_ii| >= suma de |a_ij| (j != i) en todas las filas. Es una condicion SUFICIENTE (no necesaria) para que converjan Jacobi y Gauss-Seidel. Esta funcion acepta tambien la igualdad (dominancia debil).
 bool check_dominancia(double **A, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {6, -2, 1, -2, 7, 2, 1, 2, -5};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        bool ok = check_dominancia(A, 3);
+        // Resultado: ok = true
+    */
     for (int i = 0; i < n; i++) {
         double sum = 0.0;
         for (int j = 0; j < n; j++) {
@@ -198,7 +207,17 @@ bool check_dominancia(double **A, int n) {
 #ifndef MC_FN_reorder_diagonals
 #define MC_FN_reorder_diagonals
 // Función Auxiliar: Reordena las filas (A y b) solo si la matriz no es dominante de entrada
+// Descripción: Intenta conseguir dominancia diagonal reordenando las filas de A y b EN SITIO (no cambia la solucion del sistema). Si A ya es dominante no hace nada. Devuelve true si lo consigue; si no, avisa de que la convergencia no esta garantizada.
 bool reorder_diagonals(double **A, double *b, int n) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {6, -2, 1, 1, 2, -5, -2, 7, 2};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {11, -1, 5};
+        bool ok = reorder_diagonals(A, b, 3);
+        // Resultado: ok = true , A = [6, -2, 1; -2, 7, 2; 1, 2, -5] , b = [11, 5, -1]
+    */
     // 1. Si ya es dominante de fábrica, no alteramos el sistema original
     if (check_dominancia(A, n)) {
         return true; 
@@ -241,7 +260,18 @@ bool reorder_diagonals(double **A, double *b, int n) {
 #ifndef MC_FN_jacobi_solve
 #define MC_FN_jacobi_solve
 // Método Iterativo de Jacobi (Desplazamientos simultáneos)
+// Descripción: Metodo iterativo de Jacobi (desplazamientos simultaneos): x_i(k+1) = (b_i - sum_{j!=i} a_ij*x_j(k)) / a_ii. Para cuando la norma del cambio entre dos iteraciones es menor que tol o se llega a max_iter (en ese caso avisa).
+// Condiciones: a_ii != 0 (si hay un cero en la diagonal avisa y devuelve NULL) y convergencia garantizada si A es diagonalmente dominante. Util en matrices grandes y dispersas. No modifica A ni b.
 double* jacobi_solve(double **A, double *b, int n, double tol, int max_iter) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {6, -2, 1, -2, 7, 2, 1, 2, -5};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {11, 5, -1};
+        double *x = jacobi_solve(A, b, 3, 1e-10, 500);
+        // Resultado: x = [2, 1, 1]
+    */
     // 1. Trabajamos con copias para no destruir las matrices originales del main
     double **M = coppy_mat(A, n, n);
     double *vb = copy_vect(b, n);
@@ -296,7 +326,18 @@ double* jacobi_solve(double **A, double *b, int n, double tol, int max_iter) {
 #ifndef MC_FN_gauss_seidel_solve
 #define MC_FN_gauss_seidel_solve
 // Método Iterativo de Gauss-Seidel (Desplazamientos sucesivos)
+// Descripción: Metodo iterativo de Gauss-Seidel (desplazamientos sucesivos): usa en cada paso los valores ya actualizados de la misma iteracion, por lo que suele converger el doble de rapido que Jacobi.
+// Condiciones: a_ii != 0 (si no, avisa y devuelve NULL); converge si A es diagonalmente dominante o simetrica definida positiva. Para cuando la norma del cambio entre iteraciones es menor que tol. No modifica A ni b.
 double* gauss_seidel_solve(double **A, double *b, int n, double tol, int max_iter ) {
+    /*
+    Ejemplo de uso:
+        double Ad[9] = {6, -2, 1, -2, 7, 2, 1, 2, -5};
+        double **A = zeros_mat(3, 3);
+        for (int i = 0; i < 9; i++) A[i / 3][i % 3] = Ad[i];
+        double b[3] = {11, 5, -1};
+        double *x = gauss_seidel_solve(A, b, 3, 1e-10, 500);
+        // Resultado: x = [2, 1, 1]
+    */
     double **M = coppy_mat(A, n, n);
     double *vb = copy_vect(b, n);
     
@@ -349,7 +390,18 @@ double* gauss_seidel_solve(double **A, double *b, int n, double tol, int max_ite
 #define MC_FN_sor_solve
 // Método de Sobrerrelajación (SOR) - Extensión de Gauss-Seidel
 // El valor óptimo de w está entre 1 y 2. Para w=1 es idéntico a Gauss-Seidel.
+// Descripción: Sobrerrelajacion sucesiva (SOR): Gauss-Seidel con factor de relajacion w, x_i = (1-w)*x_i + w*x_i(GS). w = 1 es Gauss-Seidel; el optimo suele estar entre 1 y 2 (si w > 1 acelera).
+// Condiciones: 0 < w < 2 (si no, avisa y devuelve NULL) y las mismas que Gauss-Seidel (A simetrica definida positiva o diagonalmente dominante). No modifica A ni b.
 double* sor_solve(double **A, double *b, int n, double w, double tol, int max_iter) {
+    /*
+    Ejemplo de uso:
+        double Ad[16] = {4, -1, -1, -1, -1, 4, -1, -1, -1, -1, 4, -1, -1, -1, -1, 4};
+        double **A = zeros_mat(4, 4);
+        for (int i = 0; i < 16; i++) A[i / 4][i % 4] = Ad[i];
+        double b[4] = {1, 1, 1, 1};
+        double *x = sor_solve(A, b, 4, 1.3, 1e-10, 500);
+        // Resultado: x = [1, 1, 1, 1]
+    */
     if (w <= 0.0 || w >= 2.0) {
         print_error("El factor de relajacion w debe estar estrictamente entre 0 y 2 para evitar divergencias.");
         return NULL;

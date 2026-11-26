@@ -9,7 +9,7 @@
 // Se pueden incluir varios modulos a la vez: cada funcion esta protegida
 // contra duplicados (#ifndef MC_FN_<nombre>).
 //
-// Funciones propias (72): del_vect, copy_vect, prod_vect, mod_vect, cos_ang_vect, suma_vect, resta_vect, prod_esc_vect, lincomb_vect, prodeach_vect, diveach_vect, exp_vect, prodx_vect, full_vect, zeros_vect, ones_vect, linspace, logspace, arange, pow_vect, sqrt_vect, abs_vect, sin_vect, cos_vect, tan_vect, sec_vect, csc_vect, cot_vect, asin_vect, acos_vect, atan_vect, asec_vect, acsc_vect, acot_vect, log_vect, log10_vect, sinh_vect, cosh_vect, tanh_vect, asinh_vect, acosh_vect, atanh_vect, sum_elems, cumsum_vect, prod_elems, cumprod_vect, mean_vect, max_vect, min_vect, std_vect, flip_vect, argmax_vect, argmin_vect, diff_vect, concat_vect, floor_vect, ceil_vect, round_vect, print_vect, input_vect, normalize_vect, sign_vect, clamp_vect, polyval_vect, polyval, slice_vect, sum_esc_vect, var_vect, proj_vect, find_gt_vect, find_if_vect, count_if_vect
+// Funciones propias (73): del_vect, length_vect, copy_vect, prod_vect, mod_vect, cos_ang_vect, suma_vect, resta_vect, prod_esc_vect, lincomb_vect, prodeach_vect, diveach_vect, exp_vect, prodx_vect, full_vect, zeros_vect, ones_vect, linspace, logspace, arange, pow_vect, sqrt_vect, abs_vect, sin_vect, cos_vect, tan_vect, sec_vect, csc_vect, cot_vect, asin_vect, acos_vect, atan_vect, asec_vect, acsc_vect, acot_vect, log_vect, log10_vect, sinh_vect, cosh_vect, tanh_vect, asinh_vect, acosh_vect, atanh_vect, sum_elems, cumsum_vect, prod_elems, cumprod_vect, mean_vect, max_vect, min_vect, std_vect, flip_vect, argmax_vect, argmin_vect, diff_vect, concat_vect, floor_vect, ceil_vect, round_vect, print_vect, input_vect, normalize_vect, sign_vect, clamp_vect, polyval_vect, polyval, slice_vect, sum_esc_vect, var_vect, proj_vect, find_gt_vect, find_if_vect, count_if_vect
 // Dependencias copiadas (3): MC_NAN, print_error, print_error_int
 // Made by Cesar with a little(to much) help of my friends (Gema y Jose)
 // ============================================================================
@@ -64,6 +64,22 @@ void del_vect(double *a) {
     delete[] a;
 }
 #endif // MC_FN_del_vect
+
+#ifndef MC_FN_length_vect
+#define MC_FN_length_vect
+// Numero de elementos de un array estatico (equivalente a length de MATLAB)
+// Descripción: Devuelve el tamaño de un array declarado con tamaño fijo (double a[5], int b[3]...). Funciona con cualquier tipo.
+// OJO: con arrays dinamicos (new) el compilador no guarda el tamaño; en ese caso hay que conservar la 'n' con la que se crearon.
+template <class T, int N> int length_vect(T (&a)[N]) {
+    /*
+    Ejemplo de uso:
+        double datos[] = {4.5, 1.2, 7.8, 3.3};
+        int n = length_vect(datos);     // n = 4
+        double *m = mean_vect(datos, n);
+    */
+    return N;
+}
+#endif // MC_FN_length_vect
 
 #ifndef MC_FN_copy_vect
 #define MC_FN_copy_vect
