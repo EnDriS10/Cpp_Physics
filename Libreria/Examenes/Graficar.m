@@ -63,6 +63,19 @@ clear; clc;
 % xlabel('x(m)') ; ylabel('y(m)') ; zlabel('z(m)') ; grid on ; %axis equal ;
 
 
+%xlim([0 10])
+%ylim([-0.4 0.8])
+
+% J = load('iter1_arr.dat');
+% G = load('iter2_arr.dat');
+% figure; plot(J(:,1), J(:,2), 'o-', G(:,1), G(:,2), 's-'); grid on
+% xlabel('log10(\epsilon)'); ylabel('Iteraciones')
+% legend('Jacobi','Gauss-Seidel')
+% 
+% D = load('f1_arr.dat');
+% figure; plot(D(:,1), D(:,2)); yline(0); grid on
+% xlim([0.01 0.05]); xlabel('\lambda'); ylabel('f(\lambda)')
+
 %%
 
 %hist(x,N)
