@@ -37,7 +37,7 @@ int main() {
 	}
 	
 	save_xy_file("iter1_v_log.dat", logtol_arr, iter1_arr, dim);
-	save_xy_file("iter1_v_log.dat", logtol_arr, iter2_arr, dim);
+	save_xy_file("iter2_v_log.dat", logtol_arr, iter2_arr, dim);
 	
 	//print_vect(x_lu,dim,"LU");
 	//print_vect(x_jacobi,dim,"Jacobi");
