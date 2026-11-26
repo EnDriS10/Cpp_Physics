@@ -122,6 +122,9 @@ int main() {
 	double *f1_arr = new double [n];
     for ( int i = 0; i<n ; i++){ f1_arr[i] = f1(land_arr[i]);}
     save_xy_file("f1_arr.dat", land_arr, f1_arr, n);
+    
+    
+    delete  [] iter_arr; delete  [] raices; delete  [] land_arr; delete  [] f1_arr;
 	        	
 	return 0;
 }

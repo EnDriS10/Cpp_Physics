@@ -34,12 +34,16 @@ int main() {
 		double *x_jacobi = jacobi_solve_iter(A, b, x0,dim, tol[i] , iter1);
 		double *x_gauss = gauss_seidel_solve_iter(A, b, x0,dim, tol[i] , iter2);
 		iter1_arr[i]=iter1; iter2_arr[i]=iter2;
+		delete [] x_jacobi; delete [] x_gauss;
 	}
     //print_vect(iter1_arr,dim,"iter1_arr");
-    //print_vect(iter2_arr,dim,"iter2_arr");
+    //print_vect(iter2_arr,dim,"iter2_arr"); 
     
     save_xy_file("iter1_arr.dat", logtol, iter1_arr, dim);
     save_xy_file("iter2_arr.dat", logtol, iter2_arr, dim);
+    
+    delete [] b; delete [] x0; delete [] tol; delete [] logtol; delete [] x_lu;
+    delete [] iter1_arr; delete [] iter2_arr; del_mat(A,dim);
     
 	return 0;
 }
